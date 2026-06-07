@@ -1,6 +1,6 @@
 /* Service Worker - Missão Prova
    Faz o app funcionar offline guardando os arquivos em cache. */
-const CACHE = "missao-prova-v1";
+const CACHE = "missao-prova-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -25,21 +25,34 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
-// Responde do cache primeiro; se não tiver, busca na rede e guarda
 self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
+  const req = e.request;
+  if (req.method !== "GET") return;
+
+  // Páginas (HTML): tenta a INTERNET primeiro → atualizações aparecem na hora.
+  if (req.mode === "navigate") {
+    e.respondWith(
+      fetch(req)
+        .then((resp) => {
+          const copy = resp.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+          return resp;
+        })
+        .catch(() => caches.match(req).then((r) => r || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  // Demais arquivos (ícones, etc.): cache primeiro, depois rede.
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      return (
+    caches.match(req).then(
+      (cached) =>
         cached ||
-        fetch(e.request)
-          .then((resp) => {
-            const copy = resp.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy));
-            return resp;
-          })
-          .catch(() => caches.match("./index.html"))
-      );
-    })
+        fetch(req).then((resp) => {
+          const copy = resp.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+          return resp;
+        })
+    )
   );
 });
