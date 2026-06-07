@@ -201,20 +201,58 @@
   .licao-corpo.aberto{display:block; padding:12px 14px 16px; border-top:1px solid var(--card2);}
   .licao-corpo b{color:#fcd34d;}
   .calc{display:block; white-space:pre; overflow-x:auto; font-family:'Consolas','Courier New',monospace; background:#0d1424; border:1px solid #1e3a5f; border-radius:8px; padding:10px 12px; margin:8px 0; color:#7ee0c0; font-size:14px; line-height:1.5;}
+
+  /* ===================== SELEÇÃO DE PERFIL ===================== */
+  .perfis-grid{display:flex; flex-wrap:wrap; gap:18px; justify-content:center; margin-top:30px;}
+  .perfil-card{width:160px; background:var(--card); border:2px solid var(--card2); border-radius:22px; padding:20px 14px; cursor:pointer; color:var(--texto); transition:transform .15s, box-shadow .15s, border-color .15s; text-align:center;}
+  .perfil-card:hover{transform:translateY(-5px);}
+  .perfil-card.tema-mario:hover{box-shadow:0 0 28px rgba(239,68,68,.6); border-color:#dc2626;}
+  .perfil-card.tema-lia:hover{box-shadow:0 0 28px rgba(244,114,182,.6); border-color:#f472b6;}
+  .perfil-av{width:104px; height:104px; border-radius:50%; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; font-size:54px; background:radial-gradient(circle at 50% 35%,#2a2440,#12101a); border:3px solid var(--card2);}
+  .perfil-card.tema-mario .perfil-av{border-color:#dc2626;}
+  .perfil-card.tema-lia .perfil-av{border-color:#f472b6;}
+  .perfil-nome{font-size:21px; font-weight:800;}
+  .perfil-serie{font-size:13px; color:var(--suave); margin-top:2px;}
+  .trocar{display:block; margin:0 auto -6px; background:var(--card); border:1px solid var(--card2); color:var(--suave); border-radius:999px; padding:6px 16px; font-size:13px; font-weight:600; cursor:pointer;}
+
+  /* ===================== TEMA DA LIA (rosa/roxo) ===================== */
+  body.tema-lia{
+    background:
+      radial-gradient(circle at 15% 0%, rgba(244,114,182,.30), transparent 45%),
+      radial-gradient(circle at 85% 8%, rgba(167,139,250,.28), transparent 45%),
+      linear-gradient(160deg,#1a1030,#2a1840 55%,#3b2360);
+  }
+  body.tema-lia header h1{ background:linear-gradient(90deg,#f472b6,#a78bfa,#22d3ee); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 14px rgba(244,114,182,.8)); }
+  body.tema-lia .kana{ color:#f0abfc; }
+  body.tema-lia .avatar{ border-color:#f472b6; box-shadow:0 0 22px rgba(244,114,182,.7), inset 0 0 18px rgba(0,0,0,.5); }
+  body.tema-lia .rankpill{ background:linear-gradient(135deg,#db2777,#7c3aed); box-shadow:0 0 16px rgba(219,39,119,.6); color:#fde68a; }
+  body.tema-lia .subj:hover{ box-shadow:0 0 26px rgba(244,114,182,.5), 0 12px 24px rgba(0,0,0,.45); }
+  body.tema-lia .tab.on{ background:#db2777; border-color:#db2777; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
+  <!-- ===== SELEÇÃO DE PERFIL ===== -->
+  <div id="perfis" class="screen active">
+    <header>
+      <div class="kana">スタディ・クエスト</div>
+      <h1>⚡ MISSÃO PROVA ⚡</h1>
+      <div class="sub">Quem vai estudar hoje? 😊</div>
+    </header>
+    <div class="perfis-grid" id="perfisGrid"></div>
+  </div>
+
   <!-- ===== HOME ===== -->
-  <div id="home" class="screen active">
+  <div id="home" class="screen">
+    <button class="trocar" onclick="trocarPerfil()">🔄 Trocar perfil</button>
     <header>
       <div class="kana">スタディ・クエスト</div>
       <div class="avatar" id="avatar" title="Toque para escolher sua foto">🦸</div>
       <input type="file" id="fotoInput" accept="image/*" style="display:none">
       <h1>⚡ MISSÃO PROVA ⚡</h1>
       <div class="aluno">Treinamento de <b id="nomeAluno">Mario</b> 🔥</div>
-      <div class="sub">2º Bimestre · 6º Ano · Supere seus limites!</div>
+      <div class="sub" id="homeSub">2º Bimestre · 6º Ano · Supere seus limites!</div>
     </header>
     <div class="topbar">
       <div class="pill rankpill"><span id="rankIco">🔰</span> <span id="rank">Recruta Novato</span></div>
@@ -251,7 +289,7 @@
 /* =========================================================
    CONTEÚDO — 6º Ano, 2º Bimestre
    ========================================================= */
-const DADOS = {
+const DADOS_MARIO = {
   ciencias: {
     nome:"Ciências", ico:"🧠", cor:"linear-gradient(135deg,#22c55e,#06b6d4)",
     provas:"📅 Provas: 08/06 (SME) e 12/06 (Prof.)",
@@ -585,23 +623,184 @@ const DADOS = {
   }
 };
 
+const DADOS_LIA = {
+  matematica: {
+    nome:"Matemática", ico:"🔢", cor:"linear-gradient(135deg,#a78bfa,#f472b6)",
+    provas:"📅 Prova: 10/06",
+    datas:["2026-06-10"],
+    licoes:[
+      ["🔢 Valor posicional","Cada algarismo tem um valor pela posição que ocupa. No número <b>347</b>:<br>• o 3 vale <b>300</b> (centena)<br>• o 4 vale <b>40</b> (dezena)<br>• o 7 vale <b>7</b> (unidade)<br><br>1 dezena = 10 unidades · 1 centena = 100 unidades."],
+      ["➕➖ Soma e subtração","Soma é juntar; subtração é tirar ou comparar. Procure as pistas no problema:<br>• ganhou, juntou, ao todo → <b>soma (+)</b><br>• perdeu, deu, sobrou, quantos a mais → <b>subtração (−)</b><br><br>Ex: Ana tinha 25 figurinhas e ganhou 13 → 25 + 13 = <b>38</b>."],
+      ["💰 Sistema monetário (dinheiro)","Usamos o Real (R$). Há cédulas (2, 5, 10, 20, 50, 100) e moedas (1, 5, 10, 25, 50 centavos e R$1).<br><br><b>Troco</b> é quanto sobra: comprei algo de R$7 e paguei com R$10 → troco = 10 − 7 = <b>R$3</b>.<br>100 centavos = R$1,00."],
+      ["📊 Tabelas e gráficos","Tabelas e gráficos organizam informações para comparar. No gráfico de barras, a barra <b>mais alta</b> mostra a <b>maior</b> quantidade. Sempre leia o título e o que cada barra representa."],
+      ["🔢 Sequências e padrões","Sequência é uma ordem que segue uma regra. Descubra o padrão para continuar:<br>• 2, 4, 6, 8... (de 2 em 2)<br>• 5, 10, 15, 20... (de 5 em 5)<br>• 10, 20, 30... (de 10 em 10)"],
+      ["🧭 Direção e posição","É saber se localizar: <b>esquerda</b> e <b>direita</b>, <b>em cima</b> e <b>embaixo</b>, <b>frente</b> e <b>trás</b>. Dica das setas: → direita, ← esquerda, ↑ para cima, ↓ para baixo."]
+    ],
+    topicos:[
+      "Valor posicional (unidade, dezena, centena)",
+      "Problemas de soma e subtração",
+      "Sistema monetário (dinheiro e troco)",
+      "Tabelas e gráficos",
+      "Sequências e padrões",
+      "Direção e posição"
+    ],
+    flashcards:[
+      ["No número 524, quanto vale o 5?","Vale 500 — está na casa da centena."],
+      ["Quantas unidades tem 1 dezena?","10 unidades."],
+      ["Quanto é 1 centena?","100 (dez dezenas)."],
+      ["Paguei R$10 numa compra de R$6. Qual o troco?","R$4."],
+      ["Quantos centavos há em R$1,00?","100 centavos."],
+      ["Continue: 5, 10, 15, ___","20 (de 5 em 5)."],
+      ["Qual a regra de 2, 4, 6, 8?","Aumenta de 2 em 2."],
+      ["A seta → aponta para qual lado?","Para a direita."]
+    ],
+    quiz:[
+      ["No número 347, o algarismo 4 vale:",["4","40","400","44"],1,"O 4 está na dezena → vale 40."],
+      ["No número 256, qual algarismo está na centena?",["6","5","2","nenhum"],2,"O 2 está na centena (vale 200)."],
+      ["Quantas unidades formam 1 dezena?",["5","10","100","2"],1,"1 dezena = 10 unidades."],
+      ["Quanto vale 1 centena?",["10","50","100","1000"],2,"1 centena = 100."],
+      ["Ana tinha 25 figurinhas e ganhou 13. Com quantas ficou?",["38","12","35","48"],0,"25 + 13 = 38."],
+      ["João tinha R$40 e gastou R$15. Quanto sobrou?",["R$55","R$25","R$35","R$20"],1,"40 − 15 = 25."],
+      ["Comprei um doce de R$3 e paguei com R$5. Qual o troco?",["R$3","R$1","R$2","R$8"],2,"5 − 3 = R$2."],
+      ["Quantos centavos há em R$1,00?",["10","50","100","1000"],2,"R$1,00 = 100 centavos."],
+      ["Qual cédula NÃO existe no Brasil?",["R$10","R$20","R$3","R$50"],2,"Não existe cédula de R$3."],
+      ["Continue: 2, 4, 6, 8, ___",["9","10","12","7"],1,"De 2 em 2 → 10."],
+      ["Continue: 5, 10, 15, ___",["16","20","25","18"],1,"De 5 em 5 → 20."],
+      ["Continue: 10, 20, 30, ___",["31","40","35","100"],1,"De 10 em 10 → 40."],
+      ["Num gráfico de barras, a maior quantidade é a barra:",["mais baixa","mais alta","mais colorida","do meio"],1,"A barra mais alta = maior quantidade."],
+      ["A seta ↑ aponta para:",["baixo","cima","direita","esquerda"],1,"↑ aponta para cima."],
+      ["Qual é o maior número?",["199","521","350","99"],1,"521 é o maior."],
+      ["O número 'quatrocentos e doze' se escreve:",["42","412","420","4012"],1,"Quatrocentos e doze = 412."],
+      ["Quanto é 30 + 25?",["45","55","65","50"],1,"30 + 25 = 55."]
+    ]
+  },
+
+  ciencias: {
+    nome:"Ciências", ico:"🔬", cor:"linear-gradient(135deg,#22c55e,#a78bfa)",
+    provas:"📅 Prova: 10/06",
+    datas:["2026-06-10"],
+    licoes:[
+      ["👀 Os 5 sentidos","Usamos os sentidos para conhecer o mundo:<br>• <b>Visão</b> (olhos) — enxergar<br>• <b>Audição</b> (ouvidos) — ouvir<br>• <b>Olfato</b> (nariz) — cheirar<br>• <b>Paladar</b> (língua) — sentir o gosto<br>• <b>Tato</b> (pele) — sentir textura, calor e frio"],
+      ["🐾 Classificação dos animais","Podemos agrupar os animais, por exemplo:<br>• <b>Mamíferos</b>: têm pelos e mamam (cão, gato)<br>• <b>Aves</b>: penas e bico (galinha, pombo)<br>• <b>Peixes</b>: escamas, vivem na água<br>• <b>Répteis</b>: pele seca (cobra, jacaré)<br>• <b>Anfíbios</b>: sapo, rã<br><br>Pela alimentação: herbívoros (plantas), carnívoros (carne) e onívoros (os dois)."],
+      ["🦋 Como os animais se deslocam","Cada animal se move de um jeito:<br>• <b>andam/correm</b> (cavalo, cachorro)<br>• <b>voam</b> (pássaros, borboletas)<br>• <b>nadam</b> (peixes)<br>• <b>rastejam</b> (cobra)<br>• <b>pulam</b> (sapo, canguru)"],
+      ["💡 Fontes de luz","Fonte de luz é o que produz luz:<br>• <b>Naturais</b>: o Sol, as estrelas, o fogo, o relâmpago<br>• <b>Artificiais</b> (feitas pelas pessoas): lâmpada, lanterna, vela, tela do celular"],
+      ["🔦 A luz e os materiais","Pela forma como a luz passa:<br>• <b>Transparente</b>: a luz passa toda, dá para ver através (vidro limpo, água)<br>• <b>Translúcido</b>: a luz passa um pouco, vê embaçado (vidro fosco, papel manteiga)<br>• <b>Opaco</b>: a luz NÃO passa (parede, madeira) — forma sombra"],
+      ["🔊 Como o som se propaga","O som é uma <b>vibração</b> que viaja pelo ar até os nossos ouvidos. Ele precisa de um meio (ar, água, sólidos) para se propagar — no vácuo (sem ar) não existe som. Sons podem ser fortes ou fracos."]
+    ],
+    topicos:[
+      "Os 5 sentidos",
+      "Classificação dos animais",
+      "Como os animais se deslocam",
+      "Fontes de luz",
+      "Materiais: opacos, transparentes e translúcidos",
+      "Como o som se propaga"
+    ],
+    flashcards:[
+      ["Quais são os 5 sentidos?","Visão, audição, olfato, paladar e tato."],
+      ["Qual sentido usamos com a língua?","O paladar (o gosto)."],
+      ["Animais com pelos que mamam são?","Mamíferos."],
+      ["Como o peixe se desloca?","Nadando."],
+      ["O Sol é fonte de luz natural ou artificial?","Natural."],
+      ["Vidro fosco, que deixa passar luz embaçada, é?","Translúcido."],
+      ["Uma parede que não deixa a luz passar é?","Opaca (forma sombra)."],
+      ["O som viaja sem ar, no vácuo?","Não. O som precisa de um meio, como o ar."]
+    ],
+    quiz:[
+      ["Qual sentido usamos para enxergar?",["Audição","Visão","Tato","Olfato"],1,"A visão, pelos olhos."],
+      ["Sentimos o gosto da comida com o:",["Paladar","Visão","Audição","Olfato"],0,"O paladar, pela língua."],
+      ["Cheiramos uma flor usando o:",["Tato","Olfato","Paladar","Audição"],1,"O olfato, pelo nariz."],
+      ["Tocar e sentir se algo é liso ou áspero é o sentido do:",["Tato","Paladar","Visão","Olfato"],0,"O tato, pela pele."],
+      ["Animais que têm pelos e mamam são:",["Aves","Peixes","Mamíferos","Répteis"],2,"Mamíferos (cão, gato, vaca)."],
+      ["Qual destes é uma ave?",["Cobra","Galinha","Peixe","Sapo"],1,"A galinha é uma ave."],
+      ["Como a cobra se desloca?",["Voando","Nadando","Rastejando","Pulando"],2,"A cobra rasteja."],
+      ["Qual animal se desloca voando?",["Cavalo","Pássaro","Peixe","Cachorro"],1,"O pássaro voa."],
+      ["Qual é uma fonte de luz NATURAL?",["Lâmpada","Lanterna","O Sol","Vela"],2,"O Sol é natural."],
+      ["Qual é uma fonte de luz ARTIFICIAL?",["O Sol","A lâmpada","As estrelas","O relâmpago"],1,"A lâmpada é feita pelas pessoas."],
+      ["Um material que dá para ver bem através (como o vidro limpo) é:",["Opaco","Transparente","Translúcido","Escuro"],1,"Transparente."],
+      ["A parede e a madeira, que não deixam a luz passar, são:",["Transparentes","Translúcidas","Opacas","Brilhantes"],2,"São opacas — formam sombra."],
+      ["O papel manteiga, que deixa passar luz embaçada, é:",["Transparente","Translúcido","Opaco","Invisível"],1,"Translúcido."],
+      ["O som é uma:",["Cor","Vibração","Luz","Comida"],1,"O som é uma vibração que viaja pelo ar."],
+      ["O som consegue se propagar no vácuo (sem ar)?",["Sim, sempre","Não, precisa de um meio","Só de dia","Só na água"],1,"Precisa de um meio, como o ar."]
+    ]
+  },
+
+  portugues: {
+    nome:"Língua Portuguesa", ico:"📖", cor:"linear-gradient(135deg,#f472b6,#fb923c)",
+    provas:"📅 Prova: 11/06",
+    datas:["2026-06-11"],
+    licoes:[
+      ["📖 Interpretação de texto","É entender o que o texto conta. Leia com calma do começo ao fim e preste atenção nos detalhes. As respostas estão no próprio texto — quando tiver dúvida, releia a parte que fala sobre a pergunta."],
+      ["🎯 Assunto do texto","O assunto é <b>sobre o que</b> o texto fala (o tema principal). Pergunte a si mesma: 'esse texto fala principalmente sobre o quê?'"],
+      ["💬 Tirinha (quadrinhos)","Tirinha é uma historinha em quadrinhos, geralmente engraçada. Para entender, observe os <b>desenhos</b>, os <b>balões de fala</b> e a ordem dos quadrinhos. Muitas vezes a graça está no <b>último quadrinho</b>."],
+      ["🎯 Finalidade do texto","É <b>para que serve</b> o texto:<br>• <b>Informar</b> → notícia<br>• <b>Divertir</b> → piada, tirinha, história<br>• <b>Ensinar</b> → receita, regras<br>• <b>Convencer</b> → propaganda"],
+      ["👉 A quem o pronome se refere","Palavras como <b>ele, ela, eles, isso</b> substituem um nome já dito, para não repetir. Ex: 'A Maria pegou a bola. <b>Ela</b> chutou.' — 'Ela' é a Maria. Para descobrir, volte na frase anterior."]
+    ],
+    topicos:[
+      "Interpretação de texto",
+      "Assunto do texto",
+      "Tirinha (quadrinhos)",
+      "Finalidade do texto",
+      "A quem o pronome se refere"
+    ],
+    flashcards:[
+      ["O que é o 'assunto' de um texto?","É sobre o que o texto fala — o tema principal."],
+      ["O que é uma tirinha?","Uma historinha em quadrinhos, geralmente engraçada."],
+      ["Cite 2 finalidades de um texto.","Informar, divertir, ensinar ou convencer (duas quaisquer)."],
+      ["Em 'O Léo correu. Ele caiu', a quem se refere 'Ele'?","Ao Léo."],
+      ["Onde costuma estar a graça de uma tirinha?","No último quadrinho."],
+      ["Numa tirinha, o que mostra a fala dos personagens?","Os balões de fala."]
+    ],
+    quiz:[
+      ["Leia: 'O gato subiu no telhado para pegar sol.' A frase fala sobre:",["Um cachorro","Um gato no telhado","Uma escola","Uma comida"],1,"Fala sobre um gato que subiu no telhado."],
+      ["'A Ana plantou uma flor e a regou todo dia.' Por que a flor cresceu?",["Ninguém cuidou","Porque a Ana a regou todo dia","Porque choveu neve","O texto não diz"],1,"Cresceu porque a Ana cuidou e regou."],
+      ["Um texto que ensina o passo a passo de um bolo é uma:",["Notícia","Receita","Piada","Propaganda"],1,"É uma receita (serve para ensinar)."],
+      ["Qual é a finalidade de uma piada?",["Informar","Divertir","Vender algo","Dar ordem"],1,"A piada serve para divertir."],
+      ["Uma propaganda de um brinquedo serve para:",["Convencer você a comprar","Ensinar matemática","Contar uma notícia","Nada"],0,"A propaganda quer convencer/vender."],
+      ["'O João achou um cachorro. Ele estava com fome.' Quem estava com fome?",["O João","O cachorro","A mãe","Ninguém"],1,"'Ele' se refere ao cachorro."],
+      ["'A Júlia e a Bia brincaram. Elas se divertiram.' Quem são 'Elas'?",["A professora","A Júlia e a Bia","Os meninos","Ninguém"],1,"'Elas' = Júlia e Bia."],
+      ["Uma tirinha aparece em forma de:",["Quadrinhos","Receita","Conta de luz","Mapa"],0,"Tirinha é em quadrinhos."],
+      ["Numa tirinha, o que mostra o que os personagens falam?",["As cores","Os balões de fala","O título","Os números"],1,"Os balões de fala."],
+      ["Leia: 'Hoje choveu muito e a rua ficou alagada.' Qual o assunto?",["Uma festa","A chuva e o alagamento","Um animal","Uma viagem"],1,"Fala sobre a chuva que alagou a rua."],
+      ["Um texto de jornal que conta um fato que aconteceu é uma:",["Notícia","Piada","Receita","Música"],0,"É uma notícia (serve para informar)."],
+      ["'O Pedro pegou o livro. Ele começou a ler.' O que o Pedro fez?",["Dormiu","Começou a ler","Correu","Comeu"],1,"Ele começou a ler."]
+    ]
+  }
+};
+
 const HOJE = new Date("2026-06-07T12:00:00");
 
 /* =========================================================
-   ANIME / PERSONALIZAÇÃO  (mude ALUNO para outro nome quando quiser)
+   PERFIS (cada criança tem o seu)  — para adicionar outro filho,
+   é só copiar um bloco abaixo com novo id, nome, dados, etc.
    ========================================================= */
-const ALUNO="Mario";
-let ultimoRank=null;
-const RANKS=[
-  {min:0,   ico:"🔰", nome:"Recruta Novato"},
-  {min:80,  ico:"🗡️", nome:"Cadete Determinado"},
-  {min:180, ico:"⚔️", nome:"Soldado de Elite"},
-  {min:300, ico:"🛡️", nome:"Guerreiro Imparável"},
-  {min:430, ico:"🔥", nome:"Caçador Lendário"},
-  {min:560, ico:"⚡", nome:"Herói de Elite"},
-  {min:700, ico:"💥", nome:"Lenda Suprema"},
-  {min:850, ico:"👑", nome:"Titã Imortal"}
+const PERFIS = [
+  { id:"mario", nome:"Mario", serie:"6º ano", avatar:"🦸", classe:"tema-mario",
+    sub:"2º Bimestre · 6º Ano · Supere seus limites!",
+    particulas:["✦","✧","⚡","✨"], cores:["#fbbf24","#ef4444"], fotoArquivo:"perfil.jpg",
+    ranks:[
+      {min:0,ico:"🔰",nome:"Recruta Novato"},{min:80,ico:"🗡️",nome:"Cadete Determinado"},
+      {min:180,ico:"⚔️",nome:"Soldado de Elite"},{min:300,ico:"🛡️",nome:"Guerreiro Imparável"},
+      {min:430,ico:"🔥",nome:"Caçador Lendário"},{min:560,ico:"⚡",nome:"Herói de Elite"},
+      {min:700,ico:"💥",nome:"Lenda Suprema"},{min:850,ico:"👑",nome:"Titã Imortal"}
+    ],
+    dados: DADOS_MARIO },
+  { id:"lia", nome:"Lia", serie:"3º ano", avatar:"🦄", classe:"tema-lia",
+    sub:"3º Ano · Brilhe nos estudos! ✨",
+    particulas:["🌸","✨","💖","⭐","🦋"], cores:["#f472b6","#a78bfa"],
+    ranks:[
+      {min:0,ico:"🌱",nome:"Pequena Aprendiz"},{min:50,ico:"🌸",nome:"Exploradora"},
+      {min:110,ico:"⭐",nome:"Estrelinha do Saber"},{min:180,ico:"🦋",nome:"Princesa dos Estudos"},
+      {min:260,ico:"🌈",nome:"Mestra Mágica"},{min:340,ico:"👑",nome:"Rainha do Saber"}
+    ],
+    dados: DADOS_LIA }
 ];
+
+/* estado do perfil atual (preenchido ao selecionar) */
+let DADOS=null, ALUNO="", RANKS=[], PERFIL_ID=null;
+let PARTICULAS=["✨","⭐","🌟"], PART_CORES=["#fbbf24","#a78bfa"];
+let PERFIL_FOTO_KEY="missaoPerfilFoto";
+let ultimoRank=null;
+
 function rank(xp){ let r=RANKS[0]; for(const x of RANKS) if(xp>=x.min) r=x; return r; }
 function bannerRankUp(r){
   const b=document.createElement("div");
@@ -612,11 +811,42 @@ function bannerRankUp(r){
   setTimeout(()=>{ b.classList.add("out"); setTimeout(()=>b.remove(),500); }, 2300);
 }
 
+/* tela de seleção de perfil */
+function renderPerfis(){
+  const wrap=document.getElementById("perfisGrid"); wrap.innerHTML="";
+  PERFIS.forEach(p=>{
+    const foto=localStorage.getItem("missaoPerfilFoto_"+p.id);
+    const el=document.createElement("button");
+    el.className="perfil-card "+p.classe;
+    el.onclick=()=>selecionarPerfil(p.id);
+    el.innerHTML=`<div class="perfil-av" ${foto?`style="background-image:url('${foto}');background-size:cover;background-position:center"`:""}>${foto?"":p.avatar}</div>
+      <div class="perfil-nome">${p.nome}</div><div class="perfil-serie">${p.serie}</div>`;
+    wrap.appendChild(el);
+  });
+}
+function selecionarPerfil(id){
+  const p=PERFIS.find(x=>x.id===id); if(!p) return;
+  PERFIL_ID=id; DADOS=p.dados; ALUNO=p.nome; RANKS=p.ranks;
+  PARTICULAS=p.particulas; PART_CORES=p.cores;
+  PERFIL_FOTO_KEY="missaoPerfilFoto_"+id;
+  document.body.className=p.classe;
+  estado = JSON.parse(localStorage.getItem("missaoProva_"+id) || "{}");
+  ultimoRank=null;
+  document.getElementById("nomeAluno").textContent=ALUNO;
+  document.getElementById("homeSub").textContent=p.sub;
+  const av=document.getElementById("avatar");
+  av.classList.remove("comfoto"); av.style.backgroundImage=""; av.textContent=p.avatar;
+  carregarPerfilFoto(p);
+  renderHome();
+  show("home");
+}
+function trocarPerfil(){ document.body.className=""; renderPerfis(); show("perfis"); }
+
 /* =========================================================
    ESTADO / PROGRESSO (salvo no navegador)
    ========================================================= */
-let estado = JSON.parse(localStorage.getItem("missaoProva") || "{}");
-function salvar(){ localStorage.setItem("missaoProva", JSON.stringify(estado)); }
+let estado = {};
+function salvar(){ if(PERFIL_ID) localStorage.setItem("missaoProva_"+PERFIL_ID, JSON.stringify(estado)); }
 function getSubj(id){
   if(!estado[id]) estado[id] = {topicos:{}, quizMelhor:0, erros:{}};
   if(!estado[id].erros) estado[id].erros = {};
@@ -908,12 +1138,11 @@ function comboPop(n){
   setTimeout(()=>p.remove(),1100);
 }
 function petala(){
-  const sparks=["✦","✧","⚡","✨"];
   const p=document.createElement("div"); p.className="sakura";
-  p.textContent=sparks[Math.floor(Math.random()*sparks.length)];
+  p.textContent=PARTICULAS[Math.floor(Math.random()*PARTICULAS.length)];
   p.style.left=(Math.random()*100)+"vw";
   p.style.fontSize=(10+Math.random()*14)+"px";
-  p.style.color=Math.random()<0.5?"#fbbf24":"#ef4444";
+  p.style.color=PART_CORES[Math.floor(Math.random()*PART_CORES.length)];
   p.style.animationDuration=(6+Math.random()*6)+"s";
   document.body.appendChild(p);
   setTimeout(()=>p.remove(),12000);
@@ -944,18 +1173,19 @@ function resetTudo(){
 /* =========================================================
    FOTO DE PERFIL (toque no avatar para escolher uma imagem)
    ========================================================= */
-const PERFIL_KEY="missaoPerfilFoto";
 function aplicarFoto(src){
   const a=document.getElementById("avatar");
   a.style.backgroundImage="url('"+src+"')";
   a.textContent=""; a.classList.add("comfoto");
 }
-function carregarPerfil(){
-  const salvo=localStorage.getItem(PERFIL_KEY);
+function carregarPerfilFoto(p){
+  const salvo=localStorage.getItem(PERFIL_FOTO_KEY);
   if(salvo){ aplicarFoto(salvo); return; }
-  const img=new Image();
-  img.onload=()=>aplicarFoto("perfil.jpg");   // se existir um perfil.jpg na pasta, usa sozinho
-  img.src="perfil.jpg";
+  if(p && p.fotoArquivo){
+    const img=new Image();
+    img.onload=()=>aplicarFoto(p.fotoArquivo);   // se existir o arquivo na pasta, usa sozinho
+    img.src=p.fotoArquivo;
+  }
 }
 document.getElementById("avatar").addEventListener("click", ()=>document.getElementById("fotoInput").click());
 document.getElementById("fotoInput").addEventListener("change", (e)=>{
@@ -969,19 +1199,18 @@ document.getElementById("fotoInput").addEventListener("change", (e)=>{
       const m=Math.min(img.width,img.height), sx=(img.width-m)/2, sy=(img.height-m)/2;
       ctx.drawImage(img, sx, sy, m, m, 0, 0, size, size);  // recorta no centro (quadrado)
       let data; try{ data=c.toDataURL("image/jpeg",0.85); }catch(err){ data=ev.target.result; }
-      try{ localStorage.setItem(PERFIL_KEY,data); }catch(err){}
+      try{ localStorage.setItem(PERFIL_FOTO_KEY,data); }catch(err){}
       aplicarFoto(data);
     };
     img.src=ev.target.result;
   };
   reader.readAsDataURL(file);
 });
-carregarPerfil();
 
-/* INICIAR */
-document.getElementById("nomeAluno").textContent = ALUNO;
-setInterval(petala, 1300); petala(); petala();
-renderHome();
+/* INICIAR — começa na tela de seleção de perfil */
+setInterval(petala, 1300);
+renderPerfis();
+show("perfis");
 
 /* PWA: registra o service worker (offline + instalável) */
 if("serviceWorker" in navigator){
