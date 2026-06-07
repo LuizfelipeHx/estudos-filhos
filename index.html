@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ Missão Prova — Mario</title>
+<meta name="theme-color" content="#dc2626">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --azul:#3b82f6; --roxo:#8b5cf6; --rosa:#ec4899; --verde:#22c55e;
+    --amarelo:#facc15; --laranja:#fb923c; --vermelho:#ef4444; --ciano:#06b6d4;
+    --fundo:#0f172a; --card:#1e293b; --card2:#334155; --texto:#f1f5f9; --suave:#94a3b8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{
+    font-family:'Segoe UI', system-ui, sans-serif;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(220,38,38,.32), transparent 42%),
+      radial-gradient(circle at 88% 8%, rgba(251,191,36,.16), transparent 42%),
+      linear-gradient(160deg,#0a0a0f,#1a0e12 55%,#2a0a0a);
+    background-attachment:fixed; color:var(--texto); min-height:100vh; padding-bottom:40px; overflow-x:hidden;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:16px;}
+
+  /* CABEÇALHO */
+  header{text-align:center; padding:18px 0 10px;}
+  header h1{font-size:30px; line-height:1.1; text-shadow:0 2px 12px rgba(139,92,246,.6);}
+  header p{color:var(--suave); margin-top:6px; font-size:14px;}
+
+  /* XP / NÍVEL */
+  .topbar{display:flex; gap:10px; align-items:center; justify-content:center; margin-top:12px; flex-wrap:wrap;}
+  .pill{background:var(--card); border:1px solid var(--card2); border-radius:999px; padding:6px 14px; font-size:14px; font-weight:600; display:flex; align-items:center; gap:6px;}
+  .pill .big{font-size:18px;}
+
+  /* PRÓXIMA PROVA */
+  .next{background:linear-gradient(135deg,var(--rosa),var(--laranja)); border-radius:20px; padding:18px; margin:18px 0; text-align:center; box-shadow:0 8px 24px rgba(236,72,153,.35);}
+  .next .label{font-size:13px; text-transform:uppercase; letter-spacing:1px; opacity:.9;}
+  .next .mat{font-size:26px; font-weight:800; margin:4px 0;}
+  .next .dias{font-size:15px; font-weight:600;}
+  .next .dias b{font-size:22px;}
+
+  /* GRID DE MATÉRIAS */
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media(max-width:520px){.grid{grid-template-columns:1fr;}}
+  .subj{border:none; border-radius:18px; padding:16px; cursor:pointer; text-align:left; color:#fff; position:relative; overflow:hidden; transition:transform .15s, box-shadow .15s; box-shadow:0 6px 16px rgba(0,0,0,.3);}
+  .subj:active{transform:scale(.97);}
+  .subj:hover{transform:translateY(-3px); box-shadow:0 12px 24px rgba(0,0,0,.4);}
+  .subj .ico{font-size:34px;}
+  .subj .nm{font-size:19px; font-weight:800; margin-top:6px;}
+  .subj .dt{font-size:12px; opacity:.92; margin-top:2px; font-weight:600;}
+  .bar{height:8px; background:rgba(255,255,255,.3); border-radius:999px; margin-top:12px; overflow:hidden;}
+  .bar > div{height:100%; background:#fff; border-radius:999px; width:0%; transition:width .5s;}
+  .subj .pct{font-size:12px; font-weight:700; margin-top:5px;}
+
+  /* TELA DE MATÉRIA */
+  .screen{display:none;}
+  .screen.active{display:block; animation:fade .3s;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+  .back{background:var(--card); border:1px solid var(--card2); color:var(--texto); border-radius:12px; padding:8px 14px; font-size:14px; font-weight:600; cursor:pointer; margin-bottom:14px;}
+  .subj-head{border-radius:18px; padding:16px; color:#fff; margin-bottom:14px; box-shadow:0 6px 16px rgba(0,0,0,.3);}
+  .subj-head .ico{font-size:38px;}
+  .subj-head h2{font-size:24px; font-weight:800;}
+  .subj-head .dt{font-size:13px; opacity:.92; margin-top:3px; font-weight:600;}
+
+  /* ABAS */
+  .tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .tab{flex:1; background:var(--card); border:1px solid var(--card2); color:var(--suave); border-radius:12px; padding:10px 4px; font-size:14px; font-weight:700; cursor:pointer; transition:.15s;}
+  .tab.on{background:var(--roxo); color:#fff; border-color:var(--roxo);}
+
+  .panel{display:none;}
+  .panel.on{display:block;}
+
+  /* CHECKLIST */
+  .topic{display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--card2); border-radius:14px; padding:14px; margin-bottom:10px; cursor:pointer; transition:.15s;}
+  .topic:hover{border-color:var(--roxo);}
+  .check{width:28px; height:28px; border-radius:8px; border:2px solid var(--suave); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; transition:.15s;}
+  .topic .txt{font-size:15px; line-height:1.3;}
+  .status{margin-left:auto; font-size:11px; font-weight:800; color:var(--suave); white-space:nowrap; text-transform:uppercase; letter-spacing:.5px;}
+  /* nível 1: mais ou menos */
+  .topic.lvl1{background:linear-gradient(90deg,rgba(250,204,21,.16),var(--card)); border-color:var(--amarelo);}
+  .topic.lvl1 .check{background:var(--amarelo); border-color:var(--amarelo); color:#1e293b;}
+  .topic.lvl1 .status{color:var(--amarelo);}
+  /* nível 2: manjo! */
+  .topic.lvl2{background:linear-gradient(90deg,rgba(34,197,94,.18),var(--card)); border-color:var(--verde);}
+  .topic.lvl2 .check{background:var(--verde); border-color:var(--verde); color:#fff;}
+  .topic.lvl2 .status{color:var(--verde);}
+  .legenda{font-size:12px; color:var(--suave); background:var(--card); border:1px solid var(--card2); border-radius:12px; padding:11px 13px; margin-bottom:12px; line-height:1.6;}
+
+  /* FLASHCARDS */
+  .fc-area{text-align:center;}
+  .flashcard{perspective:1200px; height:280px; margin-bottom:14px; cursor:pointer;}
+  .fc-inner{position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d;}
+  .flashcard.flip .fc-inner{transform:rotateY(180deg);}
+  .fc-face{position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; box-shadow:0 8px 24px rgba(0,0,0,.35);}
+  .fc-front{background:linear-gradient(135deg,var(--azul),var(--ciano));}
+  .fc-back{background:linear-gradient(135deg,var(--verde),#15803d); transform:rotateY(180deg);}
+  .fc-tag{font-size:12px; text-transform:uppercase; letter-spacing:1px; opacity:.85; margin-bottom:10px;}
+  .fc-text{font-size:20px; font-weight:700; line-height:1.4;}
+  .fc-hint{position:absolute; bottom:12px; font-size:12px; opacity:.7;}
+  .fc-nav{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .fc-nav button{background:var(--card); border:1px solid var(--card2); color:var(--texto); border-radius:12px; padding:10px 18px; font-size:16px; font-weight:700; cursor:pointer;}
+  .fc-nav button:active{transform:scale(.95);}
+  .fc-count{font-size:14px; color:var(--suave); font-weight:600;}
+
+  /* QUIZ */
+  .q-wrap{}
+  .q-progress{font-size:13px; color:var(--suave); font-weight:600; margin-bottom:8px; text-align:center;}
+  .q-card{background:var(--card); border:1px solid var(--card2); border-radius:18px; padding:18px;}
+  .q-text{font-size:18px; font-weight:700; line-height:1.4; margin-bottom:16px;}
+  .opt{display:block; width:100%; text-align:left; background:var(--card2); border:2px solid transparent; color:var(--texto); border-radius:12px; padding:13px 14px; font-size:15px; margin-bottom:10px; cursor:pointer; transition:.15s;}
+  .opt:hover{border-color:var(--roxo);}
+  .opt.correct{background:rgba(34,197,94,.25); border-color:var(--verde);}
+  .opt.wrong{background:rgba(239,68,68,.25); border-color:var(--vermelho);}
+  .opt:disabled{cursor:default;}
+  .feedback{margin-top:6px; padding:12px; border-radius:12px; font-size:14px; line-height:1.4; display:none;}
+  .feedback.show{display:block;}
+  .feedback.ok{background:rgba(34,197,94,.15); border:1px solid var(--verde);}
+  .feedback.no{background:rgba(239,68,68,.15); border:1px solid var(--vermelho);}
+  .q-next{width:100%; background:var(--roxo); border:none; color:#fff; border-radius:12px; padding:13px; font-size:16px; font-weight:700; cursor:pointer; margin-top:12px; display:none;}
+  .q-next.show{display:block;}
+
+  /* RESULTADO QUIZ */
+  .result{text-align:center; padding:24px;}
+  .result .emoji{font-size:64px;}
+  .result .score{font-size:30px; font-weight:800; margin:10px 0;}
+  .result .msg{font-size:16px; color:var(--suave); margin-bottom:18px; line-height:1.4;}
+  .result button{background:var(--roxo); border:none; color:#fff; border-radius:12px; padding:12px 24px; font-size:16px; font-weight:700; cursor:pointer;}
+
+  /* CONFETE */
+  .confetti{position:fixed; top:-10px; font-size:20px; pointer-events:none; z-index:999; animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(105vh) rotate(540deg); opacity:0;}}
+
+  .reset{display:block; margin:24px auto 0; background:transparent; border:1px solid var(--card2); color:var(--suave); border-radius:10px; padding:8px 16px; font-size:12px; cursor:pointer;}
+
+  /* ===================== TEMA ANIME ===================== */
+  .wrap{position:relative; z-index:1;}
+  /* pétalas de sakura ao fundo */
+  .sakura{position:fixed; top:-24px; z-index:0; pointer-events:none; opacity:.8; animation:cair linear forwards; filter:drop-shadow(0 0 6px rgba(251,191,36,.7));}
+  @keyframes cair{
+    0%{transform:translateY(0) translateX(0) rotate(0); opacity:0;}
+    10%{opacity:.85;}
+    50%{transform:translateY(50vh) translateX(40px) rotate(180deg);}
+    100%{transform:translateY(110vh) translateX(-30px) rotate(360deg); opacity:0;}
+  }
+  /* título e cabeçalho com brilho */
+  header{padding:22px 0 8px;}
+  .kana{font-size:12px; letter-spacing:6px; color:#f87171; opacity:.9; font-weight:800;}
+  .avatar{width:84px; height:84px; margin:8px auto 2px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:44px; background:radial-gradient(circle at 50% 35%, #3a1212, #120a0a); border:3px solid #dc2626; box-shadow:0 0 22px rgba(220,38,38,.7), inset 0 0 18px rgba(0,0,0,.6); animation:avatarFloat 3s ease-in-out infinite;}
+  @keyframes avatarFloat{50%{transform:translateY(-6px);}}
+  header h1{font-size:34px; line-height:1.05; font-weight:900;
+    background:linear-gradient(90deg,#fbbf24,#ef4444,#fbbf24);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 0 14px rgba(239,68,68,.8)); animation:pulseGlow 2.4s ease-in-out infinite;}
+  @keyframes pulseGlow{0%,100%{filter:drop-shadow(0 0 12px rgba(239,68,68,.6));} 50%{filter:drop-shadow(0 0 26px rgba(251,191,36,.95));}}
+  .aluno{margin-top:8px; font-size:16px; font-weight:800; color:#e2e8f0;}
+  .aluno b{color:#fde047; text-shadow:0 0 12px rgba(253,224,71,.7);}
+  header .sub{color:var(--suave); margin-top:4px; font-size:13px;}
+  /* badge de rank com brilho */
+  .rankpill{background:linear-gradient(135deg,#dc2626,#7f1d1d); border:none; box-shadow:0 0 16px rgba(220,38,38,.6); color:#fde68a; font-weight:800;}
+  /* cartões de matéria com aura ao passar o dedo/mouse */
+  .subj{position:relative;}
+  .subj:hover{box-shadow:0 0 26px rgba(239,68,68,.5), 0 12px 24px rgba(0,0,0,.45);}
+  /* COMBO popup */
+  .combo-pop{position:fixed; top:32%; left:50%; transform:translate(-50%,-50%); z-index:1000; pointer-events:none; text-align:center; animation:comboAnim 1.1s ease-out forwards;}
+  .combo-pop .cx{display:block; font-size:42px; font-weight:900; color:#fde047; text-shadow:0 0 18px rgba(250,204,21,.9), 0 2px 0 #b45309; font-style:italic;}
+  .combo-pop .ce{display:block; font-size:22px; font-weight:900; color:#f472b6; text-shadow:0 0 14px rgba(244,114,182,.9); font-style:italic;}
+  @keyframes comboAnim{0%{transform:translate(-50%,-50%) scale(.3) rotate(-8deg); opacity:0;} 25%{transform:translate(-50%,-50%) scale(1.15) rotate(-8deg); opacity:1;} 75%{opacity:1;} 100%{transform:translate(-50%,-90%) scale(1) rotate(-8deg); opacity:0;}}
+  /* banner RANK UP */
+  .rankup{position:fixed; inset:0; z-index:1001; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:radial-gradient(circle, rgba(124,58,237,.4), rgba(0,0,0,.78)); animation:ruIn .4s ease-out;}
+  .rankup.out{animation:ruOut .5s ease-in forwards;}
+  @keyframes ruIn{from{opacity:0;} to{opacity:1;}}
+  @keyframes ruOut{to{opacity:0;}}
+  .ru-kana{font-size:16px; letter-spacing:8px; color:#67e8f9; font-weight:800;}
+  .ru-title{font-size:52px; font-weight:900; font-style:italic; background:linear-gradient(90deg,#fde047,#f472b6,#22d3ee); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 20px rgba(253,224,71,.8)); animation:ruPulse .6s ease-in-out infinite alternate;}
+  @keyframes ruPulse{to{transform:scale(1.08);}}
+  .ru-rank{font-size:26px; font-weight:900; color:#fff; margin-top:8px; text-shadow:0 0 14px rgba(167,139,250,.9);}
+  /* avatar clicável */
+  .avatar{cursor:pointer;}
+  .avatar.comfoto{font-size:0; background-size:cover !important; background-position:center !important;}
+  /* menu da Batalha */
+  .q-menu{display:flex; flex-direction:column; gap:12px; padding:6px 0;}
+  .q-start{background:linear-gradient(135deg,#7c3aed,#dc2626); border:none; color:#fff; border-radius:14px; padding:16px; font-size:17px; font-weight:800; cursor:pointer; box-shadow:0 6px 16px rgba(0,0,0,.35);}
+  .q-start:active{transform:scale(.98);}
+  .q-start.rev{background:linear-gradient(135deg,#f59e0b,#dc2626);}
+  .q-start:disabled{opacity:.5; cursor:default; filter:grayscale(.5);}
+  .q-menu-hint{font-size:13px; color:var(--suave); text-align:center; line-height:1.5;}
+  /* botões da tela de resultado */
+  .result-btns{display:flex; flex-direction:column; gap:10px; align-items:center;}
+  .result-btns button{width:100%; max-width:280px;}
+  .result-btns .secund{background:var(--card2);}
+  /* 4 abas: deixa caber melhor */
+  .tabs .tab{font-size:13px; padding:9px 2px;}
+  /* AULAS (explicações em sanfona) */
+  .licao{background:var(--card); border:1px solid var(--card2); border-radius:14px; margin-bottom:10px; overflow:hidden;}
+  .licao-tit{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:14px; cursor:pointer; font-weight:800; font-size:15px;}
+  .licao-tit:hover{color:#fcd34d;}
+  .licao-tit .seta{color:var(--rosa); font-size:13px; flex-shrink:0;}
+  .licao-corpo{display:none; padding:0 14px; font-size:14px; line-height:1.65; color:#dbe3ef;}
+  .licao-corpo.aberto{display:block; padding:12px 14px 16px; border-top:1px solid var(--card2);}
+  .licao-corpo b{color:#fcd34d;}
+  .calc{display:block; white-space:pre; overflow-x:auto; font-family:'Consolas','Courier New',monospace; background:#0d1424; border:1px solid #1e3a5f; border-radius:8px; padding:10px 12px; margin:8px 0; color:#7ee0c0; font-size:14px; line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== HOME ===== -->
+  <div id="home" class="screen active">
+    <header>
+      <div class="kana">スタディ・クエスト</div>
+      <div class="avatar" id="avatar" title="Toque para escolher sua foto">🦸</div>
+      <input type="file" id="fotoInput" accept="image/*" style="display:none">
+      <h1>⚡ MISSÃO PROVA ⚡</h1>
+      <div class="aluno">Treinamento de <b id="nomeAluno">Mario</b> 🔥</div>
+      <div class="sub">2º Bimestre · 6º Ano · Supere seus limites!</div>
+    </header>
+    <div class="topbar">
+      <div class="pill rankpill"><span id="rankIco">🔰</span> <span id="rank">Recruta Novato</span></div>
+      <div class="pill">⚡ Poder: <span class="big" id="xp">0</span></div>
+      <div class="pill">🟢 <span class="big" id="totalDone">0</span></div>
+    </div>
+
+    <div class="next" id="nextExam"></div>
+
+    <div class="grid" id="subjGrid"></div>
+
+    <button class="reset" onclick="resetTudo()">🔄 Apagar todo o progresso</button>
+  </div>
+
+  <!-- ===== MATÉRIA ===== -->
+  <div id="subject" class="screen">
+    <button class="back" onclick="goHome()">← Voltar</button>
+    <div class="subj-head" id="subjHead"></div>
+    <div class="tabs">
+      <button class="tab on" data-tab="aulas" onclick="setTab('aulas')">📚 Aulas</button>
+      <button class="tab" data-tab="check" onclick="setTab('check')">📋 Treino</button>
+      <button class="tab" data-tab="cards" onclick="setTab('cards')">🃏 Cartas</button>
+      <button class="tab" data-tab="quiz" onclick="setTab('quiz')">⚔️ Batalha</button>
+    </div>
+    <div id="panel-aulas" class="panel on"></div>
+    <div id="panel-check" class="panel"></div>
+    <div id="panel-cards" class="panel"></div>
+    <div id="panel-quiz" class="panel"></div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================
+   CONTEÚDO — 6º Ano, 2º Bimestre
+   ========================================================= */
+const DADOS = {
+  ciencias: {
+    nome:"Ciências", ico:"🧠", cor:"linear-gradient(135deg,#22c55e,#06b6d4)",
+    provas:"📅 Provas: 08/06 (SME) e 12/06 (Prof.)",
+    datas:["2026-06-08","2026-06-12"],
+    licoes:[
+      ["🧠 O sistema nervoso","O sistema nervoso é o 'centro de controle' do corpo: recebe informações do ambiente, interpreta e manda respostas.<br><br>Divisões:<br>• <b>Central (SNC):</b> encéfalo (cérebro, cerebelo e tronco) + medula espinhal.<br>• <b>Periférico (SNP):</b> os nervos espalhados pelo corpo.<br><br>A célula que transmite as mensagens (impulsos elétricos) é o <b>neurônio</b>, e a 'ponte' entre dois neurônios é a <b>sinapse</b>."],
+      ["⚡ Respostas voluntárias e involuntárias","• <b>Voluntárias:</b> a gente decide fazer. Ex: levantar a mão, escrever (comando do cérebro).<br>• <b>Involuntárias:</b> acontecem sozinhas. Ex: coração bater, respirar dormindo, digestão.<br><br>O <b>ato reflexo</b> é uma resposta involuntária e muito rápida a um perigo (tirar a mão de algo quente). Quem comanda é a <b>medula espinhal</b> — por isso é tão veloz, nem espera o cérebro."],
+      ["🦵 Sistema periférico e os movimentos","O cérebro manda a ordem ('mexa a perna') e o sinal viaja pelos <b>nervos</b> até o <b>músculo</b>, que se contrai e gera o <b>movimento</b>. Os sentidos (visão, tato, audição...) mandam informações de volta pelo mesmo caminho."],
+      ["🌱 O ciclo do nitrogênio","O nitrogênio é o gás mais abundante do ar (78%), mas os seres vivos não usam ele direto do ar.<br>1. <b>Bactérias</b> do solo transformam o nitrogênio numa forma que as plantas absorvem pelas raízes.<br>2. As <b>plantas</b> usam para formar proteínas e crescer.<br>3. Os <b>animais</b> comem as plantas e pegam o nitrogênio.<br>4. Quando morrem, os <b>decompositores</b> devolvem ao solo — e o ciclo recomeça."],
+      ["♻️ Ciclo dos materiais e o ser humano","Na natureza, materiais como água, carbono e nitrogênio ficam circulando e sendo reaproveitados (nada se perde). O ser humano pode <b>desequilibrar</b> isso com poluição, desmatamento e excesso de adubos químicos. Ajudam: reciclar, reduzir o lixo e evitar poluir."],
+      ["🪨 As eras geológicas","A Terra tem mais de 4 bilhões de anos. Para estudar essa história enorme, os cientistas a dividem em grandes períodos: as <b>eras geológicas</b>. Eles descobrem o passado estudando <b>fósseis</b> (restos de seres antigos) e as <b>camadas de rocha</b>. Ex: os dinossauros viveram na era <b>Mesozoica</b>."]
+    ],
+    topicos:[
+      "Como o sistema nervoso percebe e responde aos estímulos",
+      "Respostas involuntárias (fora do nosso controle)",
+      "Sistema nervoso periférico e os movimentos do corpo",
+      "O ciclo do nitrogênio",
+      "O ciclo dos materiais e a interferência humana",
+      "As eras geológicas da Terra"
+    ],
+    flashcards:[
+      ["Qual é o órgão central do sistema nervoso?","O encéfalo (cérebro, cerebelo e tronco encefálico) junto com a medula espinhal formam o sistema nervoso central."],
+      ["O que é um ato reflexo?","É uma resposta rápida e involuntária a um estímulo, comandada pela medula espinhal — como tirar a mão de algo quente sem pensar."],
+      ["Qual a célula básica do sistema nervoso?","O neurônio, que transmite impulsos nervosos (mensagens elétricas) pelo corpo."],
+      ["O que faz o sistema nervoso periférico?","É formado pelos nervos que ligam o sistema nervoso central ao resto do corpo, levando e trazendo informações dos músculos e órgãos."],
+      ["O que é o ciclo do nitrogênio?","É o caminho do nitrogênio entre o ar, o solo, as plantas e os animais. Bactérias transformam o nitrogênio para que as plantas possam usá-lo."],
+      ["Como o ser humano interfere nos ciclos dos materiais?","Por poluição, desmatamento e uso de adubos químicos, que podem desequilibrar a natureza."],
+      ["O que são eras geológicas?","São grandes períodos da história da Terra, divididos conforme as mudanças do planeta e os seres vivos que existiram em cada época."]
+    ],
+    quiz:[
+      ["Quando você encosta sem querer em algo quente e tira a mão na hora, isso é um:",["Movimento voluntário","Ato reflexo","Pensamento","Sonho"],1,"Isso! É um ato reflexo — rápido e involuntário, comandado pela medula espinhal."],
+      ["Qual estrutura comanda os atos reflexos para serem mais rápidos?",["O estômago","A medula espinhal","O coração","Os pulmões"],1,"A medula espinhal responde sem precisar passar pelo cérebro, por isso é tão rápido."],
+      ["A célula responsável por transmitir as mensagens no sistema nervoso é o:",["Neurônio","Glóbulo vermelho","Músculo","Osso"],0,"Exato! O neurônio transmite os impulsos nervosos."],
+      ["O sistema nervoso central é formado por:",["Coração e pulmões","Encéfalo e medula espinhal","Estômago e intestino","Ossos e músculos"],1,"O encéfalo (cérebro, cerebelo e tronco) e a medula espinhal formam o sistema nervoso central."],
+      ["Os nervos que ligam o cérebro ao resto do corpo formam o sistema nervoso:",["Central","Periférico","Digestivo","Respiratório"],1,"O sistema nervoso periférico são os nervos espalhados pelo corpo."],
+      ["Qual destas ações é VOLUNTÁRIA (controlada pela nossa vontade)?",["O coração bater","Digerir a comida","Chutar uma bola","Respirar enquanto dorme"],2,"Chutar a bola é voluntário; as outras acontecem sem a gente decidir."],
+      ["Qual destas é uma resposta INVOLUNTÁRIA do corpo?",["Levantar a mão","Escrever o nome","O coração bater","Pular"],2,"O batimento do coração acontece sozinho, fora do nosso controle."],
+      ["A parte do encéfalo responsável pelo equilíbrio e pela coordenação dos movimentos é o:",["Cerebelo","Estômago","Fígado","Pulmão"],0,"O cerebelo cuida do equilíbrio e da coordenação."],
+      ["No ciclo do nitrogênio, quem ajuda a transformar o nitrogênio para as plantas usarem?",["Os peixes","As bactérias","As nuvens","As pedras"],1,"As bactérias do solo fazem esse trabalho essencial."],
+      ["A maior parte do nitrogênio do planeta está:",["No ar (atmosfera)","Dentro das pedras","No fogo","Na Lua"],0,"Cerca de 78% do ar é nitrogênio."],
+      ["O nitrogênio é importante para os seres vivos porque ajuda a formar:",["As proteínas","A água","O fogo","A luz do Sol"],0,"O nitrogênio entra na formação das proteínas, essenciais à vida."],
+      ["Qual destas é uma forma de o ser humano interferir nos ciclos naturais?",["Plantar árvores","Respirar","A poluição e o desmatamento","Dormir"],2,"A poluição e o desmatamento desequilibram os ciclos da natureza."],
+      ["Queimar combustíveis (como gasolina) lança no ar muito gás:",["Oxigênio puro","Carbônico (CO₂)","Hélio","Nitrogênio limpo"],1,"A queima libera gás carbônico, que afeta o clima."],
+      ["Reciclar e reduzir o lixo ajuda principalmente a:",["Aumentar a poluição","Equilibrar o ciclo dos materiais","Acabar com a água","Parar a Terra de girar"],1,"Reciclar mantém os materiais em circulação e reduz o desperdício."],
+      ["As eras geológicas servem para:",["Marcar as horas do dia","Dividir a longa história da Terra","Contar dinheiro","Medir a temperatura"],1,"São grandes períodos da história do planeta."],
+      ["Os cientistas estudam as eras geológicas observando, entre outras coisas:",["Os fósseis e as rochas","As nuvens de hoje","O horário do recreio","As cores do arco-íris"],0,"Fósseis e camadas de rocha contam a história da Terra."],
+      ["O cérebro fica protegido dentro do:",["Crânio","Estômago","Coração","Pé"],0,"O crânio protege o cérebro."],
+      ["A medula espinhal fica protegida dentro da:",["Coluna vertebral","Barriga","Garganta","Mão"],0,"A coluna vertebral protege a medula espinhal."],
+      ["Olhos, ouvidos, nariz, língua e pele são nossos órgãos dos:",["Sentidos","Ossos","Músculos","Pulmões"],0,"São os órgãos dos sentidos, que captam os estímulos."],
+      ["Quando levamos um susto e o coração dispara, essa resposta é:",["Voluntária","Involuntária","Planejada","Lenta"],1,"O coração acelera sozinho — é involuntário."],
+      ["O impulso nervoso é uma mensagem do tipo:",["Elétrica","Sonora","Colorida","De papel"],0,"Os neurônios transmitem impulsos elétricos."],
+      ["O ponto onde a mensagem passa de um neurônio para outro chama-se:",["Sinapse","Osso","Veia","Músculo"],0,"A sinapse é a 'ponte' entre os neurônios."],
+      ["As plantas absorvem o nitrogênio (já transformado) principalmente:",["Pelas folhas, da chuva","Pelas raízes, do solo","Pelo caule, do vento","Da luz do Sol"],1,"As raízes retiram do solo os compostos de nitrogênio."],
+      ["Quando plantas e animais morrem, quem devolve os nutrientes ao solo são os:",["Decompositores","Caçadores","Carros","Rios"],0,"Fungos e bactérias decompositores reciclam os nutrientes."],
+      ["O uso exagerado de adubos químicos pode poluir principalmente:",["A água dos rios e lagos","A Lua","O Sol","As estrelas"],0,"O excesso de adubo escorre e contamina rios e lagos."],
+      ["A era geológica em que viveram os dinossauros é a era:",["Mesozoica","Digital","Industrial","Moderna"],0,"Os dinossauros viveram na era Mesozoica."],
+      ["Fósseis são:",["Restos ou marcas de seres vivos antigos","Pedras preciosas","Tipos de nuvem","Plantas atuais"],0,"Fósseis são vestígios de seres que viveram há muito tempo."],
+      ["Para produzir um movimento, o sistema nervoso trabalha junto com os:",["Músculos","Cabelos","Dentes","Unhas"],0,"O sistema nervoso comanda os músculos, que movem o corpo."],
+      ["O 'martelinho' no joelho que faz a perna pular sozinha é um exemplo de:",["Ato reflexo","Pensamento","Sonho","Movimento voluntário"],0,"É um ato reflexo clássico."],
+      ["O caminho que a água, o carbono e o nitrogênio fazem circulando na natureza são chamados de:",["Ciclos dos materiais","Eras geológicas","Atos reflexos","Sinapses"],0,"São os ciclos dos materiais (água, carbono, nitrogênio...)."]
+    ]
+  },
+
+  matematica: {
+    nome:"Matemática", ico:"🔢", cor:"linear-gradient(135deg,#3b82f6,#8b5cf6)",
+    provas:"📅 Provas: 09/06 (SME) e 11/06 (Prof.)",
+    datas:["2026-06-09","2026-06-11"],
+    licoes:[
+      ["🔢 Potenciação","É uma multiplicação de fatores iguais. Em <b>2⁴</b>, o <b>2</b> é a <b>base</b> e o <b>4</b> é o <b>expoente</b> (quantas vezes multiplicar a base):<br><b>2⁴ = 2 × 2 × 2 × 2 = 16</b><br><br>Exemplos:<br>• 3² = 3 × 3 = 9<br>• 5³ = 5 × 5 × 5 = 125<br>• 10² = 100 · 10³ = 1000"],
+      ["🧱 Fatoração (decompor em fatores primos)","Fatorar é escrever um número como multiplicação de <b>números primos</b> (2, 3, 5, 7, 11...). Divida sempre pelo menor primo possível, até chegar a 1:<span class='calc'>12 | 2\n 6 | 2\n 3 | 3\n 1 |</span>Então 12 = 2 × 2 × 3 = <b>2² × 3</b>.<br><br>Outro exemplo:<span class='calc'>18 | 2\n 9 | 3\n 3 | 3\n 1 |</span>18 = 2 × 3 × 3 = <b>2 × 3²</b>.<br><br>💡 Essa decomposição é a base para calcular o MMC e o MDC pela fatoração."],
+      ["🔗 MMC (Mínimo Múltiplo Comum)","É o <b>menor</b> número que é múltiplo de dois números ao mesmo tempo. Veja 3 jeitos (use o que preferir) — exemplo com 4 e 6:<br><br><b>1) Listando os múltiplos</b><br>Múltiplos de 4: 4, 8, <b>12</b>, 16, 20...<br>Múltiplos de 6: 6, <b>12</b>, 18, 24...<br>Menor em comum = <b>12</b><br><br><b>2) Decomposição simultânea</b> (o mais usado) — divida os DOIS ao mesmo tempo pelos primos, até sobrar 1 e 1; multiplique tudo da direita:<span class='calc'>4 , 6 | 2\n2 , 3 | 2\n1 , 3 | 3\n1 , 1 |</span>MMC = 2 × 2 × 3 = <b>12</b><br><br><b>3) Por fatoração</b> — fatore cada um e multiplique os fatores com o <b>MAIOR</b> expoente:<span class='calc'>4 = 2²\n6 = 2 × 3</span>MMC = 2² × 3 = <b>12</b><br><br>💡 Usado para somar frações de denominadores diferentes."],
+      ["✂️ MDC (Máximo Divisor Comum)","É o <b>maior</b> número que divide dois números ao mesmo tempo, sem deixar resto. Há 4 métodos — exemplo com 12 e 18:<br><br><b>1) Listando os divisores</b> (bom p/ números pequenos)<br>Divisores de 12: 1, 2, 3, 4, <b>6</b>, 12<br>Divisores de 18: 1, 2, 3, <b>6</b>, 9, 18<br>Maior em comum = <b>6</b><br><br><b>2) Por fatoração</b> — fatore cada número e multiplique os fatores <b>comuns</b> com o <b>MENOR</b> expoente:<span class='calc'>12 = 2² × 3\n18 = 2 × 3²</span>Comuns: 2¹ e 3¹ → MDC = 2 × 3 = <b>6</b><br><br><b>3) Decomposição simultânea</b> (rápido) — divida os dois ao mesmo tempo SÓ pelos primos que dividem <b>ambos</b>:<span class='calc'>12 , 18 | 2\n 6 ,  9 | 3\n 2 ,  3 |  (para: nada divide os dois)</span>MDC = 2 × 3 = <b>6</b><br><br><b>4) Algoritmo de Euclides</b> (o mais rápido p/ números grandes) — divida o maior pelo menor e vá usando o resto, até o resto dar 0:<span class='calc'>18 ÷ 12 → resto 6\n12 ÷ 6  → resto 0</span>O MDC é o último divisor → <b>6</b>.<br><br>💡 Serve para simplificar frações e repartir em grupos iguais."],
+      ["🧮 Situações-problema (4 operações)","Leia o problema e escolha a operação:<br>• juntar/ganhar → <b>adição (+)</b><br>• tirar/perder/diferença → <b>subtração (−)</b><br>• grupos iguais, 'vezes' → <b>multiplicação (×)</b><br>• repartir igualmente → <b>divisão (÷)</b><br><br>Ex: '3 caixas com 12 lápis cada' → 3 × 12 = <b>36</b>."],
+      ["📊 Tratamento da informação","É ler e montar <b>gráficos e tabelas</b>. O gráfico de barras serve para comparar quantidades; a tabela organiza dados em linhas e colunas. Sempre confira o <b>título</b> e o que cada eixo representa."],
+      ["📐 Ângulos","Ângulo é a abertura entre duas linhas, medida em graus (°):<br>• <b>Agudo:</b> menor que 90°<br>• <b>Reto:</b> 90° (canto em 'L')<br>• <b>Obtuso:</b> entre 90° e 180°<br>• <b>Raso:</b> 180° (linha reta)"],
+      ["⬡ Polígonos e quadriláteros","Polígono é uma figura fechada só com lados retos: 3 lados = triângulo, 4 = quadrilátero, 5 = pentágono, 6 = hexágono.<br><br><b>Quadriláteros</b> (4 lados):<br>• <b>Quadrado:</b> 4 lados iguais + 4 ângulos retos<br>• <b>Retângulo:</b> 4 ângulos retos<br>• <b>Losango:</b> 4 lados iguais<br>• <b>Trapézio:</b> 1 par de lados paralelos"],
+      ["🍕 Frações","Em 3/4: o <b>4</b> (denominador) é em quantas partes dividiu; o <b>3</b> (numerador) é quantas pegou.<br>• <b>Equivalentes:</b> valem o mesmo → 1/2 = 2/4 = 3/6<br>• <b>Simplificar:</b> divida em cima e embaixo pelo mesmo número → 6/8 = 3/4<br>• <b>Comparar:</b> mesmo denominador, vence o maior de cima → 3/4 > 1/4<br>• <b>Somar/subtrair (mesmo denominador):</b> opera os de cima, mantém o de baixo → 2/5 + 1/5 = 3/5"]
+    ],
+    topicos:[
+      "Potenciação",
+      "MMC (mínimo múltiplo comum)",
+      "MDC (máximo divisor comum)",
+      "Situações-problema com as 4 operações",
+      "Tratamento da informação (gráficos e tabelas)",
+      "Ângulos",
+      "Polígonos",
+      "Quadriláteros",
+      "Frações: equivalentes, simplificação, comparação, adição e subtração",
+      "Figuras geométricas"
+    ],
+    flashcards:[
+      ["Quanto é 2⁴?","2⁴ = 2 × 2 × 2 × 2 = 16. A base (2) é multiplicada por ela mesma 4 vezes (o expoente)."],
+      ["O que significa o expoente na potenciação?","Indica quantas vezes a base é multiplicada por ela mesma. Em 5³, o 3 é o expoente: 5×5×5."],
+      ["O que é o MMC de dois números?","É o menor número que é múltiplo dos dois ao mesmo tempo. Ex: MMC de 4 e 6 = 12."],
+      ["O que é o MDC de dois números?","É o maior número que divide os dois ao mesmo tempo. Ex: MDC de 12 e 8 = 4."],
+      ["O que são frações equivalentes?","São frações que representam a mesma quantidade. Ex: 1/2 = 2/4 = 3/6."],
+      ["Como somar frações com o mesmo denominador?","Soma-se os numeradores e mantém-se o denominador. Ex: 2/5 + 1/5 = 3/5."],
+      ["O que é um ângulo reto?","É o ângulo de 90°, que forma um 'L' perfeito, como o canto de um quadrado."],
+      ["O que é um quadrilátero?","É um polígono de 4 lados. Exemplos: quadrado, retângulo, losango e trapézio."],
+      ["Como simplificar uma fração?","Dividindo o numerador e o denominador pelo mesmo número. Ex: 6/8 ÷2 = 3/4."]
+    ],
+    quiz:[
+      ["Quanto é 3³ (três ao cubo)?",["9","27","6","33"],1,"3³ = 3×3×3 = 27."],
+      ["Quanto é 10² ?",["20","100","12","1000"],1,"10² = 10×10 = 100."],
+      ["Quanto é 5² ?",["10","25","7","52"],1,"5² = 5×5 = 25."],
+      ["Quanto é 2⁵ ?",["10","16","32","25"],2,"2⁵ = 2×2×2×2×2 = 32."],
+      ["No número 7³, o número 7 é a:",["Base","Expoente","Resposta","Soma"],0,"O 7 é a base; o 3 é o expoente (quantas vezes multiplicar)."],
+      ["Qual é o MMC de 4 e 6?",["10","24","12","2"],2,"O menor múltiplo comum de 4 e 6 é 12."],
+      ["Qual é o MMC de 3 e 5?",["8","15","3","30"],1,"O menor múltiplo comum de 3 e 5 é 15."],
+      ["Qual é o MDC de 12 e 18?",["6","3","36","2"],0,"O maior número que divide 12 e 18 é 6."],
+      ["Qual é o MDC de 8 e 12?",["2","4","24","8"],1,"O maior número que divide 8 e 12 é 4."],
+      ["Qual fração é equivalente a 1/2 ?",["2/3","3/6","1/4","2/5"],1,"3/6 representa a mesma quantidade que 1/2."],
+      ["Quanto é 2/7 + 3/7 ?",["5/14","6/7","5/7","1/7"],2,"Mesmo denominador: soma os de cima → 5/7."],
+      ["Qual fração é MAIOR: 3/4 ou 1/4 ?",["1/4","São iguais","3/4","Não dá para saber"],2,"Com o mesmo denominador, vence quem tem o numerador maior: 3/4."],
+      ["Simplificando a fração 6/8, obtemos:",["3/4","2/4","1/2","6/4"],0,"Dividindo por 2: 6/8 = 3/4."],
+      ["Um ângulo de 90° é chamado de:",["Agudo","Obtuso","Reto","Raso"],2,"90° é o ângulo reto, o cantinho em 'L'."],
+      ["Um ângulo MENOR que 90° é chamado de:",["Reto","Agudo","Obtuso","Raso"],1,"Menor que 90° é o ângulo agudo (bem 'fechadinho')."],
+      ["Um ângulo MAIOR que 90° (e menor que 180°) é:",["Agudo","Reto","Obtuso","Nulo"],2,"Entre 90° e 180° é o ângulo obtuso."],
+      ["Quantos lados tem um quadrilátero?",["3","4","5","6"],1,"Quadri = 4 lados!"],
+      ["O polígono de 3 lados se chama:",["Triângulo","Quadrado","Pentágono","Círculo"],0,"3 lados = triângulo."],
+      ["O polígono de 5 lados se chama:",["Quadrado","Hexágono","Pentágono","Triângulo"],2,"Penta = 5 lados → pentágono."],
+      ["O quadrilátero com 4 lados iguais e 4 ângulos retos é o:",["Triângulo","Quadrado","Círculo","Trapézio"],1,"4 lados iguais + 4 ângulos retos = quadrado."],
+      ["Comprei 3 caixas com 12 lápis cada. Quantos lápis ao todo?",["15","36","24","312"],1,"3 × 12 = 36 lápis."],
+      ["Para comparar quantidades de forma visual, o melhor é usar um:",["Gráfico","Poema","Desenho livre","Bilhete"],0,"Gráficos e tabelas (tratamento da informação) ajudam a comparar dados."],
+      ["Quanto é 6² ?",["12","36","66","18"],1,"6² = 6×6 = 36."],
+      ["Quanto é 4² ?",["8","16","12","44"],1,"4² = 4×4 = 16."],
+      ["Quanto é 10³ ?",["30","100","1000","300"],2,"10³ = 10×10×10 = 1000."],
+      ["Qual é o MMC de 2 e 3 ?",["1","6","5","12"],1,"O menor múltiplo comum de 2 e 3 é 6."],
+      ["Qual é o MDC de 6 e 9 ?",["1","2","3","18"],2,"O maior número que divide 6 e 9 é 3."],
+      ["Quanto é 1/4 + 2/4 ?",["3/8","3/4","2/4","1/2"],1,"Mesmo denominador: 1+2 = 3 → 3/4."],
+      ["Quanto é 5/6 − 2/6 ?",["7/6","3/6","3/12","2/6"],1,"Mesmo denominador: 5−2 = 3 → 3/6 (que é 1/2)."],
+      ["Simplificando a fração 4/8, obtemos:",["1/2","2/4","4/2","1/4"],0,"Dividindo por 4: 4/8 = 1/2."],
+      ["O polígono de 6 lados se chama:",["Pentágono","Hexágono","Octógono","Triângulo"],1,"Hexa = 6 lados → hexágono."],
+      ["Um ângulo de 180° (uma linha reta) é chamado de:",["Reto","Agudo","Raso","Obtuso"],2,"180° é o ângulo raso."]
+    ]
+  },
+
+  portugues: {
+    nome:"Língua Portuguesa", ico:"📖", cor:"linear-gradient(135deg,#ec4899,#f43f5e)",
+    provas:"📅 Provas: 10/06 (SME) e 15/06 (Prof.)",
+    datas:["2026-06-10","2026-06-15"],
+    licoes:[
+      ["📖 Interpretação de texto","Interpretar é entender o que o texto diz e o que ele quer passar. Leia com calma, descubra o <b>assunto principal</b>, preste atenção em quem fala e no sentido de cada parte. A resposta quase sempre se apoia no próprio texto."],
+      ["🎭 Conotação e denotação","• <b>Denotativo:</b> sentido real, do dicionário → 'O anel é de ouro'.<br>• <b>Conotativo:</b> sentido figurado → 'Ela tem um coração de ouro' (é bondosa, não é ouro de verdade)."],
+      ["🔗 Causa/consequência e referenciação","• <b>Causa</b> é o motivo; <b>consequência</b> é o resultado: 'Choveu (causa), por isso a rua alagou (consequência)'.<br>• <b>Referenciação:</b> usar ele, ela, isso, esse para retomar algo já dito sem repetir: 'João chegou. <b>Ele</b> estava cansado'."],
+      ["🗣️ Variação linguística e sinônimos","• <b>Variação linguística:</b> jeitos diferentes de falar a mesma língua (região, idade, situação) — e não é erro!<br>• <b>Sinônimos:</b> sentido parecido (feliz/contente). <b>Antônimos:</b> sentido oposto (alto/baixo)."],
+      ["🔤 Substantivos e verbos","• <b>Substantivo:</b> dá nome a seres, lugares, objetos e sentimentos (cachorro, cidade, amor). Próprio = nome específico com maiúscula (Pedro, Brasil).<br>• <b>Verbo:</b> indica ação ou estado. Tempos: <b>passado</b> (estudou), <b>presente</b> (estuda), <b>futuro</b> (estudará). Quando dá ordem é o imperativo: 'Estude!'."],
+      ["🔌 Conjunções","Ligam ideias:<br>• <b>e</b> → soma<br>• <b>mas/porém</b> → oposição<br>• <b>ou</b> → escolha<br>• <b>porque</b> → causa"],
+      ["📚 Elementos da narrativa","Toda história tem: <b>enredo</b> (o que acontece), <b>personagens</b> (o principal é o protagonista), <b>narrador</b> (quem conta), <b>tempo</b> (quando) e <b>espaço</b> (onde)."],
+      ["❗ Pontuação","• <b>.</b> ponto → termina a frase<br>• <b>,</b> vírgula → separa e dá pausa<br>• <b>?</b> → pergunta<br>• <b>!</b> → emoção/surpresa<br>• <b>:</b> dois-pontos → antes de explicação ou fala"]
+    ],
+    topicos:[
+      "Interpretação textual",
+      "Conotação, causa e consequência, referenciação",
+      "Variação linguística, sinonímia, estrutura e finalidade",
+      "Substantivos e modos verbais",
+      "Conjunções",
+      "Elementos da narrativa",
+      "Significado das palavras e expressões",
+      "Pontuação"
+    ],
+    flashcards:[
+      ["O que é sentido conotativo (conotação)?","É o sentido figurado, não literal. Ex: 'Ele tem um coração de ouro' — não é ouro de verdade, é bondade."],
+      ["O que é sentido denotativo?","É o sentido real, literal da palavra, como no dicionário. Ex: 'O anel é de ouro'."],
+      ["O que são sinônimos?","Palavras com significados parecidos. Ex: bonito / belo / lindo."],
+      ["Quais são os elementos da narrativa?","Enredo (o que acontece), personagens, tempo, espaço (lugar) e narrador (quem conta)."],
+      ["O que é um substantivo?","É a palavra que dá nome aos seres, objetos, lugares e sentimentos. Ex: cachorro, cidade, amor."],
+      ["O que é variação linguística?","São as diferentes formas de falar a mesma língua, conforme a região, a idade ou a situação."],
+      ["Para que serve a conjunção 'mas'?","Para indicar oposição/contraste. Ex: 'Queria sair, mas estava chovendo.'"],
+      ["O que é referenciação em um texto?","É usar palavras (como ele, ela, isso) para retomar algo já citado, evitando repetição."]
+    ],
+    quiz:[
+      ["Na frase 'Ela é uma estrela no palco', a palavra 'estrela' está em sentido:",["Denotativo (real)","Conotativo (figurado)","Errado","Científico"],1,"É conotativo: ela brilha/se destaca, não é uma estrela de verdade."],
+      ["Na frase 'A estrela brilha no céu', a palavra 'estrela' está em sentido:",["Conotativo (figurado)","Denotativo (real)","Engraçado","Errado"],1,"Aqui é denotativo: é uma estrela de verdade, o sentido literal."],
+      ["Qual par de palavras são sinônimos?",["Alto e baixo","Feliz e contente","Dia e noite","Quente e frio"],1,"Feliz e contente têm significados parecidos."],
+      ["Qual é um sinônimo de 'rápido'?",["Lento","Veloz","Pesado","Grande"],1,"Veloz tem o mesmo significado de rápido."],
+      ["Quem é o personagem que conta a história chama-se:",["Enredo","Narrador","Espaço","Tempo"],1,"O narrador é quem conta a história."],
+      ["Numa narrativa, o LUGAR onde a história acontece é o:",["Tempo","Espaço","Narrador","Enredo"],1,"O espaço é o lugar onde tudo acontece."],
+      ["Numa narrativa, o conjunto de fatos que acontecem é o:",["Enredo","Espaço","Personagem","Título"],0,"O enredo é a sequência dos acontecimentos."],
+      ["Qual destas palavras é um substantivo?",["Correr","Bonito","Cidade","Rapidamente"],2,"Cidade nomeia um lugar — é substantivo."],
+      ["Qual destas palavras é um verbo?",["Mesa","Azul","Pular","Feliz"],2,"Pular indica uma ação — é verbo."],
+      ["A frase 'Estude para a prova!' expressa uma:",["Pergunta","Ordem/pedido","Dúvida","Descrição"],1,"É uma ordem/pedido (modo imperativo do verbo)."],
+      ["Na frase 'Estudei muito, mas não fui bem', a palavra 'mas' indica:",["Soma","Oposição/contraste","Tempo","Lugar"],1,"'Mas' mostra uma oposição entre as ideias."],
+      ["Na frase 'Não fui à escola porque estava doente', a parte 'porque estava doente' indica a:",["Causa","Consequência","Dúvida","Comparação"],0,"'Porque estava doente' é a causa de não ter ido."],
+      ["'Choveu muito, por isso a rua alagou.' Alagar a rua foi a:",["Causa","Consequência","Pergunta","Opinião"],1,"O alagamento é a consequência da chuva."],
+      ["'O João chegou. Ele estava cansado.' A palavra 'Ele' serve para:",["Começar outra história","Retomar 'João' sem repetir","Fazer uma pergunta","Indicar lugar"],1,"É referenciação: 'ele' retoma 'João' sem repetir o nome."],
+      ["Falar de um jeito diferente dependendo da região do Brasil é exemplo de:",["Erro de português","Variação linguística","Pontuação","Conotação"],1,"É variação linguística — e não é erro!"],
+      ["Que sinal de pontuação usamos no fim de uma PERGUNTA?",["Ponto final (.)","Ponto de interrogação (?)","Vírgula (,)","Dois-pontos (:)"],1,"A pergunta termina com ponto de interrogação (?)."],
+      ["Para mostrar surpresa, susto ou emoção, usamos o:",["Ponto de interrogação (?)","Ponto de exclamação (!)","Ponto final (.)","Travessão (—)"],1,"O ponto de exclamação (!) marca emoção e surpresa."],
+      ["Interpretar um texto é, principalmente:",["Decorar todas as palavras","Entender o que o texto quer dizer","Contar quantas linhas tem","Copiar o texto"],1,"Interpretar é compreender o sentido e as ideias do texto."],
+      ["Qual é um sinônimo de 'grande'?",["Pequeno","Enorme","Curto","Leve"],1,"Enorme tem o mesmo sentido de grande."],
+      ["'Pedro' e 'Brasil' são exemplos de substantivos:",["Comuns","Próprios","Verbos","Adjetivos"],1,"Nomes de pessoas e lugares são substantivos próprios (letra maiúscula)."],
+      ["Na frase 'Ele estudou ontem', o verbo está no tempo:",["Presente","Passado","Futuro","Nenhum"],1,"'Estudou' indica algo que já aconteceu — passado."],
+      ["Na frase 'Eu viajarei amanhã', o verbo está no tempo:",["Passado","Presente","Futuro","Ordem"],2,"'Viajarei' indica algo que vai acontecer — futuro."],
+      ["A conjunção 'e' serve para:",["Somar/juntar ideias","Mostrar oposição","Fazer pergunta","Indicar tempo"],0,"'E' adiciona uma ideia à outra."],
+      ["Na frase 'Você quer suco ou refrigerante?', a palavra 'ou' indica:",["Adição","Alternativa/escolha","Oposição","Causa"],1,"'Ou' apresenta uma escolha entre opções."],
+      ["Na frase 'Ele está fervendo de raiva', o sentido é:",["Literal (real)","Figurado (conotativo)","Científico","Errado"],1,"Ninguém ferve de verdade — é sentido figurado."],
+      ["Para que serve principalmente a vírgula?",["Terminar a frase","Separar elementos e dar pausa","Fazer pergunta","Mostrar emoção"],1,"A vírgula separa termos e marca pequenas pausas."],
+      ["O personagem principal de uma história é chamado de:",["Narrador","Protagonista","Autor","Leitor"],1,"O protagonista é o personagem principal."],
+      ["A 'moral da história' é:",["O título","O ensinamento/lição que ela passa","O nome do autor","O número de páginas"],1,"A moral é a lição que a história deixa."],
+      ["Em 'Comprei um livro. Ele é ótimo', a palavra 'Ele' se refere a:",["A mim","O livro","Outra pessoa","Ninguém"],1,"'Ele' retoma 'o livro' (referenciação)."],
+      ["As gírias e o jeito de falar dos jovens são um exemplo de:",["Erro grave","Variação linguística","Pontuação","Sinônimo"],1,"É variação linguística ligada à idade/grupo."]
+    ]
+  },
+
+  geografia: {
+    nome:"Geografia", ico:"🌍", cor:"linear-gradient(135deg,#fb923c,#facc15)",
+    provas:"📅 Prova: 16/06 (Prof.)",
+    datas:["2026-06-16"],
+    licoes:[
+      ["🗺️ Representação do espaço","Representar o espaço é mostrar lugares de forma reduzida: <b>mapas, plantas, croquis e maquetes</b>. 'Lugar de vivência' é onde você vive o dia a dia: casa, rua, bairro e escola."],
+      ["🧭 Tecnologias ancestrais e digitais","• <b>Ancestrais:</b> saberes antigos, como se orientar pelas estrelas e pelo Sol.<br>• <b>Digitais:</b> tecnologias de hoje, como o <b>GPS</b> e os mapas no celular."],
+      ["🌍 Cartografia e movimentos da Terra","<b>Cartografia</b> é a ciência de fazer mapas. Todo mapa tem <b>legenda</b> (explica os símbolos) e <b>escala</b> (o quanto foi reduzido).<br><br>A Terra faz 2 movimentos:<br>• <b>Rotação:</b> gira em si mesma (~24h) → <b>dia e noite</b>.<br>• <b>Translação:</b> gira ao redor do Sol (~365 dias) → o <b>ano e as estações</b>."],
+      ["📏 Linhas imaginárias e coordenadas","• <b>Linha do Equador:</b> divide a Terra em Hemisfério Norte e Sul.<br>• <b>Paralelos:</b> linhas horizontais → latitude.<br>• <b>Meridianos:</b> linhas verticais (de polo a polo) → longitude. O principal é o de <b>Greenwich</b> (0°).<br>• <b>Coordenadas:</b> latitude + longitude localizam qualquer ponto."],
+      ["🕐 Fusos horários","Como a Terra gira, não é o mesmo horário no mundo todo. O planeta é dividido em faixas: os <b>fusos horários</b>. Por isso, quando é dia aqui, pode ser noite do outro lado. O Sol <b>nasce no Leste</b> e <b>se põe no Oeste</b>."]
+    ],
+    topicos:[
+      "Representação espacial: lugares de vivência",
+      "Tecnologias ancestrais e digitais",
+      "Cartografia e movimentos da Terra",
+      "Linhas imaginárias e coordenadas geográficas",
+      "Fusos horários (Que horas são?)"
+    ],
+    flashcards:[
+      ["O que é cartografia?","É a ciência e a arte de fazer mapas para representar os lugares da Terra."],
+      ["Quais são os dois principais movimentos da Terra?","Rotação (gira em torno do próprio eixo — causa dia e noite) e translação (gira ao redor do Sol — causa as estações e o ano)."],
+      ["O que é a Linha do Equador?","É a linha imaginária que divide a Terra em Hemisfério Norte e Hemisfério Sul."],
+      ["O que são latitude e longitude?","São as coordenadas geográficas que localizam qualquer ponto na Terra. Latitude (paralelos) e longitude (meridianos)."],
+      ["Por que existem fusos horários?","Porque a Terra gira (rotação), então é dia em uns lugares e noite em outros ao mesmo tempo. Cada faixa tem um horário."],
+      ["O que é o Meridiano de Greenwich?","É o meridiano principal (longitude 0°), que serve de referência para medir as longitudes e os fusos horários."],
+      ["O que são tecnologias ancestrais?","São saberes e técnicas antigas, passadas por gerações, como a orientação pelas estrelas usada pelos povos antigos."]
+    ],
+    quiz:[
+      ["A ciência que estuda e produz mapas é a:",["Biologia","Cartografia","Matemática","Astronomia"],1,"Cartografia é a ciência dos mapas."],
+      ["O movimento que causa o dia e a noite é a:",["Translação","Rotação","Gravidade","Maré"],1,"A rotação faz a Terra girar em si mesma, criando dia e noite."],
+      ["A rotação da Terra dura aproximadamente:",["1 hora","24 horas (1 dia)","1 mês","365 dias"],1,"A Terra dá uma volta em si mesma em cerca de 24 horas."],
+      ["O movimento de translação está ligado a:",["Dia e noite","As estações do ano","O vento","A chuva"],1,"A translação (ao redor do Sol) define o ano e as estações."],
+      ["A translação (volta ao redor do Sol) dura cerca de:",["24 horas","7 dias","365 dias (1 ano)","30 minutos"],2,"Uma volta completa ao redor do Sol leva cerca de 365 dias."],
+      ["A linha imaginária que divide a Terra em Norte e Sul é:",["O Meridiano de Greenwich","A Linha do Equador","O Trópico de Câncer","A Latitude"],1,"A Linha do Equador divide os hemisférios Norte e Sul."],
+      ["O Meridiano de Greenwich é a referência principal e tem longitude:",["90°","0°","180°","45°"],1,"Greenwich é o meridiano 0°, ponto de partida das longitudes."],
+      ["As coordenadas que localizam um ponto na Terra são:",["Altura e peso","Latitude e longitude","Norte e sul apenas","Dia e mês"],1,"Latitude e longitude formam as coordenadas geográficas."],
+      ["Os quatro pontos cardeais são:",["Cima, baixo, frente, trás","Norte, Sul, Leste, Oeste","Sol, Lua, mar, terra","A, B, C, D"],1,"Norte, Sul, Leste e Oeste são os pontos cardeais."],
+      ["Qual instrumento ajuda a encontrar as direções (como o Norte)?",["A bússola","O relógio","A régua","O termômetro"],0,"A bússola aponta para o Norte e ajuda na orientação."],
+      ["Os fusos horários existem por causa da:",["Rotação da Terra","Chuva","Lua cheia","Translação"],0,"Como a Terra gira, cada região tem um horário diferente."],
+      ["Quando é dia de um lado da Terra, do outro lado normalmente é:",["Também dia","Noite","Sempre meio-dia","Inverno"],1,"Por causa da rotação e dos fusos, é noite do outro lado."],
+      ["Orientar-se pelas estrelas, como faziam povos antigos, é um exemplo de tecnologia:",["Digital","Ancestral","Quebrada","Do futuro"],1,"É uma tecnologia ancestral, um saber antigo."],
+      ["Hoje usamos qual tecnologia digital para nos localizar e achar caminhos?",["GPS","Bússola de madeira","Mapa de papel antigo","As estrelas"],0,"O GPS é uma tecnologia digital de localização."],
+      ["O que explica o significado dos símbolos e cores de um mapa?",["O título","A legenda","A capa","O índice"],1,"A legenda explica o que cada símbolo do mapa representa."],
+      ["Um mapa-múndi mostra:",["Só o Brasil","O mundo todo (todos os continentes)","Só a sua rua","A Lua"],1,"O mapa-múndi representa o mundo inteiro."],
+      ["O Brasil fica em qual continente?",["Europa","América (do Sul)","África","Ásia"],1,"O Brasil está na América do Sul."],
+      ["A representação mais parecida com o formato real da Terra é o:",["Mapa de papel","Globo terrestre","Quadro","Cartaz"],1,"O globo terrestre é redondo, como a Terra."],
+      ["A Terra tem o formato:",["Quadrado","Plano","Arredondado (esférico)","Triangular"],2,"A Terra é arredondada (quase uma esfera)."],
+      ["O Sol nasce no:",["Norte","Sul","Leste","Oeste"],2,"O Sol nasce no Leste."],
+      ["O Sol se põe no:",["Leste","Oeste","Norte","Sul"],1,"O Sol se põe no Oeste."],
+      ["Entre o Norte e o Leste fica o ponto colateral:",["Noroeste","Nordeste","Sudeste","Sudoeste"],1,"Norte + Leste = Nordeste."],
+      ["As linhas imaginárias que vão de um polo ao outro (na vertical) são os:",["Paralelos","Meridianos","Trópicos","Equadores"],1,"Os meridianos ligam os polos Norte e Sul."],
+      ["As linhas imaginárias paralelas ao Equador (na horizontal) são os:",["Meridianos","Paralelos","Fusos","Pontos cardeais"],1,"Os paralelos são horizontais, como o Equador."],
+      ["O Brasil está, em sua maior parte, no hemisfério:",["Norte","Sul","Leste","Oeste"],1,"A maior parte do Brasil fica no Hemisfério Sul."],
+      ["A rosa dos ventos, num mapa, serve para:",["Mostrar a temperatura","Indicar as direções","Contar as cidades","Mostrar a hora"],1,"A rosa dos ventos mostra as direções (N, S, L, O)."],
+      ["As estações do ano acontecem por causa do movimento de:",["Rotação","Translação","Maré","Vento"],1,"A translação, com a inclinação da Terra, gera as estações."],
+      ["'Lugar de vivência' significa:",["Um país distante","O lugar onde a pessoa vive seu dia a dia","Um planeta","Um mapa antigo"],1,"É o lugar do cotidiano: casa, bairro, escola."],
+      ["Mapas, plantas e maquetes são formas de:",["Representação do espaço","Cozinhar","Fazer música","Contar piadas"],0,"São representações espaciais (dos lugares)."]
+    ]
+  },
+
+  historia: {
+    nome:"História", ico:"🏛️", cor:"linear-gradient(135deg,#8b5cf6,#6366f1)",
+    provas:"📅 Prova: 17/06 (Prof.)",
+    datas:["2026-06-17"],
+    licoes:[
+      ["🏛️ Mesopotâmia e as primeiras cidades","<b>Mesopotâmia</b> significa 'terra entre rios' e ficava entre o <b>Tigre e o Eufrates</b> — é o berço da civilização. Com a <b>agricultura</b>, os povos deixaram de ser nômades e formaram as <b>primeiras cidades</b>. Lá surgiu o <b>Código de Hamurabi</b> (um dos primeiros conjuntos de leis escritas)."],
+      ["✍️ A escrita cuneiforme","Uma das primeiras escritas da história, criada pelos <b>sumérios</b>. Eram símbolos em forma de cunha feitos em <b>placas de argila</b>."],
+      ["👑 Reino Kush","Poderoso reino <b>africano</b>, ao sul do Egito (região da Núbia). Era rico pelo comércio (ouro e ferro) e também construiu <b>pirâmides</b>."],
+      ["🐫 Egito Antigo e as pirâmides","Civilização que cresceu às margens do rio <b>Nilo</b> (as cheias deixavam a terra fértil). Era governada pelo <b>faraó</b>, escrevia com <b>hieróglifos</b> e construía <b>pirâmides</b> como túmulos dos faraós, fazendo a <b>mumificação</b> dos corpos."],
+      ["🏹 Povos originários do Brasil e da América","Os <b>povos originários</b> (indígenas) já viviam aqui antes dos europeus. No Brasil, por exemplo, <b>Tupi e Guarani</b>. Viviam da caça, pesca, coleta e agricultura, em aldeias, com muitas línguas e culturas diferentes."],
+      ["⛰️ Maias, Astecas e Incas","• <b>Maias:</b> América Central; grandes astrônomos (calendário preciso).<br>• <b>Astecas:</b> no México; capital Tenochtitlán; formaram um grande império.<br>• <b>Incas:</b> na Cordilheira dos Andes; capital Cuzco; construíram Machu Picchu e uma enorme rede de estradas."]
+    ],
+    topicos:[
+      "Mesopotâmia e as primeiras cidades",
+      "A escrita cuneiforme",
+      "Reino Kush",
+      "Egito Antigo e as pirâmides",
+      "População originária do Brasil",
+      "Povos originários da América",
+      "Maias",
+      "Astecas",
+      "Incas"
+    ],
+    flashcards:[
+      ["Onde ficava a Mesopotâmia?","Entre os rios Tigre e Eufrates, no Oriente Médio. É considerada o 'berço da civilização'."],
+      ["O que foi a escrita cuneiforme?","Foi uma das primeiras escritas da humanidade, feita pelos sumérios com símbolos em forma de cunha em placas de argila."],
+      ["O que foi o Reino Kush?","Foi um poderoso reino africano, ao sul do Egito (região da Núbia), conhecido por seu comércio e suas pirâmides."],
+      ["Para que serviam as pirâmides do Egito?","Eram túmulos dos faraós, construídas para guardar seus corpos e tesouros para a vida após a morte."],
+      ["Quem são os povos originários do Brasil?","São os povos indígenas que já viviam aqui antes da chegada dos europeus, como Tupi, Guarani e muitos outros."],
+      ["Onde viveram os Maias?","Na América Central (México e Guatemala). Eram grandes astrônomos e criaram um calendário muito preciso."],
+      ["Onde viveram os Astecas?","No México. Tinham a capital Tenochtitlán e formaram um grande império."],
+      ["Onde viveram os Incas?","Na Cordilheira dos Andes (Peru). Construíram Machu Picchu e tinham uma vasta rede de estradas."]
+    ],
+    quiz:[
+      ["A Mesopotâmia ficava entre quais dois rios?",["Nilo e Amazonas","Tigre e Eufrates","Tietê e Paraná","Sena e Tâmisa"],1,"Tigre e Eufrates — por isso 'terra entre rios'."],
+      ["A palavra Mesopotâmia significa:",["Terra do Sol","Terra entre rios","Terra do gelo","Terra das pirâmides"],1,"Meso = entre, potamos = rios: 'terra entre rios'."],
+      ["As primeiras cidades surgiram quando os povos passaram a:",["Viver no mar","Praticar agricultura e se fixar","Construir foguetes","Viajar o tempo todo"],1,"Com a agricultura, os povos se fixaram e formaram cidades."],
+      ["A escrita cuneiforme foi criada pelos:",["Egípcios","Sumérios","Maias","Incas"],1,"Os sumérios, na Mesopotâmia, criaram a escrita cuneiforme."],
+      ["A escrita cuneiforme era feita em:",["Papel","Placas de argila","Telas de TV","Folhas de árvore"],1,"Usavam símbolos em forma de cunha em placas de argila."],
+      ["O Reino Kush ficava no continente:",["Africano","Europeu","Americano","Asiático"],0,"Kush era um reino africano, ao sul do Egito (Núbia)."],
+      ["O Reino Kush ficava ao sul de qual outra grande civilização?",["Roma","Egito","China","Grécia"],1,"Kush ficava ao sul do Egito, na região da Núbia."],
+      ["A civilização do Egito Antigo se desenvolveu às margens do rio:",["Amazonas","Nilo","Tigre","Tâmisa"],1,"O rio Nilo foi essencial para o Egito Antigo."],
+      ["As pirâmides do Egito serviam como:",["Casas","Túmulos dos faraós","Escolas","Mercados"],1,"Eram túmulos dos faraós."],
+      ["Quem governava o Egito Antigo?",["O presidente","O faraó","O imperador romano","O cacique"],1,"O faraó era o governante do Egito Antigo."],
+      ["A escrita usada pelos egípcios era feita de desenhos chamados:",["Hieróglifos","Emojis","Letras latinas","Números"],0,"Os egípcios escreviam com hieróglifos."],
+      ["Os povos que já viviam no Brasil antes dos europeus são chamados de:",["Imigrantes","Povos originários (indígenas)","Colonizadores","Bandeirantes"],1,"São os povos originários, ou indígenas."],
+      ["Quais destes são exemplos de povos indígenas do Brasil?",["Tupi e Guarani","Maias e Astecas","Incas e Kush","Romanos e gregos"],0,"Tupi e Guarani estão entre os povos originários do Brasil."],
+      ["Qual povo construiu Machu Picchu, nos Andes?",["Maias","Astecas","Incas","Egípcios"],2,"Foram os Incas, na Cordilheira dos Andes."],
+      ["Os Astecas tinham como capital a cidade de:",["Tenochtitlán","Roma","Cuzco","Cairo"],0,"Tenochtitlán era a capital asteca, no atual México."],
+      ["Os Incas viveram principalmente na Cordilheira dos:",["Alpes","Andes","Himalaias","Apeninos"],1,"Os Incas viveram nos Andes, na América do Sul."],
+      ["Os Maias se destacaram por serem grandes:",["Navegadores","Astrônomos e matemáticos","Pintores europeus","Faraós"],1,"Os Maias eram excelentes astrônomos e criaram um calendário preciso."],
+      ["Além dos sumérios, quais povos também viveram na Mesopotâmia?",["Babilônios e assírios","Maias e incas","Egípcios e gregos","Tupi e guarani"],0,"Babilônios e assírios também habitaram a Mesopotâmia."],
+      ["Um dos primeiros conjuntos de leis escritas da história foi o Código de:",["Hamurabi","Trânsito","Defesa","Honra"],0,"O Código de Hamurabi surgiu na Mesopotâmia (Babilônia)."],
+      ["O rio Nilo era essencial para o Egito porque:",["Deixava o solo fértil para plantar","Era cheio de ouro","Congelava no inverno","Não tinha água"],0,"As cheias do Nilo fertilizavam a terra para a agricultura."],
+      ["Os egípcios faziam a mumificação para:",["Enfeitar as casas","Conservar o corpo para a vida após a morte","Cozinhar","Construir pirâmides"],1,"Mumificavam para preservar o corpo para a outra vida."],
+      ["O monumento egípcio com corpo de leão e cabeça humana é a:",["Esfinge","Pirâmide","Múmia","Bússola"],0,"A Esfinge tem corpo de leão e cabeça humana."],
+      ["Assim como o Egito, o Reino Kush também ficou conhecido por construir:",["Pirâmides","Castelos","Arranha-céus","Igrejas"],0,"Kush também construiu pirâmides, na Núbia."],
+      ["Os povos originários do Brasil viviam da caça, da pesca, da coleta e da:",["Indústria","Agricultura","Mineração de petróleo","Eletricidade"],1,"Também praticavam a agricultura (mandioca, milho...)."],
+      ["Os Maias viveram em qual parte da América?",["América Central","América do Norte (Canadá)","Extremo Sul","Europa"],0,"Os Maias viveram na América Central."],
+      ["Os Astecas formaram um grande:",["Império","Reino europeu","Faraó","Deserto"],0,"Os astecas formaram um poderoso império no México."],
+      ["A capital do Império Inca era a cidade de:",["Cuzco","Roma","Cairo","Lisboa"],0,"Cuzco era a capital dos Incas."],
+      ["Os Incas eram famosos por construir uma grande rede de:",["Estradas","Pirâmides de vidro","Navios","Trens"],0,"Os Incas tinham uma vasta rede de estradas nos Andes."],
+      ["A região fértil onde surgiram as primeiras cidades é chamada de Crescente:",["Fértil","Lunar","Seco","Gelado"],0,"É o 'Crescente Fértil', no Oriente Médio."],
+      ["Os povos que mudavam de lugar em busca de alimento eram chamados de:",["Nômades","Faraós","Reis","Sumérios"],0,"Nômades não tinham moradia fixa; mudavam atrás de comida."]
+    ]
+  }
+};
+
+const HOJE = new Date("2026-06-07T12:00:00");
+
+/* =========================================================
+   ANIME / PERSONALIZAÇÃO  (mude ALUNO para outro nome quando quiser)
+   ========================================================= */
+const ALUNO="Mario";
+let ultimoRank=null;
+const RANKS=[
+  {min:0,   ico:"🔰", nome:"Recruta Novato"},
+  {min:80,  ico:"🗡️", nome:"Cadete Determinado"},
+  {min:180, ico:"⚔️", nome:"Soldado de Elite"},
+  {min:300, ico:"🛡️", nome:"Guerreiro Imparável"},
+  {min:430, ico:"🔥", nome:"Caçador Lendário"},
+  {min:560, ico:"⚡", nome:"Herói de Elite"},
+  {min:700, ico:"💥", nome:"Lenda Suprema"},
+  {min:850, ico:"👑", nome:"Titã Imortal"}
+];
+function rank(xp){ let r=RANKS[0]; for(const x of RANKS) if(xp>=x.min) r=x; return r; }
+function bannerRankUp(r){
+  const b=document.createElement("div");
+  b.className="rankup";
+  b.innerHTML=`<div class="ru-kana">ランクアップ</div><div class="ru-title">RANK UP!</div><div class="ru-rank">${r.ico} ${r.nome}</div>`;
+  document.body.appendChild(b);
+  festaGrande();
+  setTimeout(()=>{ b.classList.add("out"); setTimeout(()=>b.remove(),500); }, 2300);
+}
+
+/* =========================================================
+   ESTADO / PROGRESSO (salvo no navegador)
+   ========================================================= */
+let estado = JSON.parse(localStorage.getItem("missaoProva") || "{}");
+function salvar(){ localStorage.setItem("missaoProva", JSON.stringify(estado)); }
+function getSubj(id){
+  if(!estado[id]) estado[id] = {topicos:{}, quizMelhor:0, erros:{}};
+  if(!estado[id].erros) estado[id].erros = {};
+  return estado[id];
+}
+
+/* =========================================================
+   HOME
+   ========================================================= */
+function diasAte(dataStr){
+  const d = new Date(dataStr+"T12:00:00");
+  return Math.round((d - HOJE)/(1000*60*60*24));
+}
+function proximaProva(){
+  let melhor=null;
+  for(const id in DADOS){
+    DADOS[id].datas.forEach(dt=>{
+      const dias = diasAte(dt);
+      if(dias>=0 && (!melhor || dias<melhor.dias)){
+        melhor = {nome:DADOS[id].nome, ico:DADOS[id].ico, dias, dt};
+      }
+    });
+  }
+  return melhor;
+}
+function progressoSubj(id){
+  const t = DADOS[id].topicos.length;
+  const st = getSubj(id);
+  let pontos=0, dominados=0;
+  for(let i=0;i<t;i++){
+    const lv = nivel(st,i);
+    pontos += lv;            // 0, 1 ou 2 pontos por tópico
+    if(lv===2) dominados++;  // só "manjo!" conta como dominado
+  }
+  return {feitos:dominados, t, pontos, pct: t? Math.round(pontos/(t*2)*100):0};
+}
+function totalTopicosFeitos(){
+  let n=0; for(const id in DADOS) n+=progressoSubj(id).feitos; return n;
+}
+function calcXP(){
+  let xp=0;
+  for(const id in DADOS){
+    xp += progressoSubj(id).pontos*5;        // 5 XP por ponto (🟡=5, 🟢=10)
+    xp += (getSubj(id).quizMelhor||0)*5;     // 5 XP por acerto recorde no quiz
+  }
+  return xp;
+}
+
+function renderHome(){
+  const xpAtual = calcXP();
+  document.getElementById("xp").textContent = xpAtual;
+  const r = rank(xpAtual);
+  document.getElementById("rank").textContent = r.nome;
+  document.getElementById("rankIco").textContent = r.ico;
+  document.getElementById("totalDone").textContent = totalTopicosFeitos();
+  if(ultimoRank!==null && r.nome!==ultimoRank){ bannerRankUp(r); }
+  ultimoRank = r.nome;
+
+  // próxima prova
+  const p = proximaProva();
+  const box = document.getElementById("nextExam");
+  if(p){
+    const txt = p.dias===0 ? "É HOJE! 🔥" : p.dias===1 ? "Falta <b>1</b> dia!" : "Faltam <b>"+p.dias+"</b> dias";
+    box.innerHTML = `<div class="label">⏰ Próxima prova</div>
+      <div class="mat">${p.ico} ${p.nome}</div>
+      <div class="dias">${txt}</div>`;
+    box.style.display="block";
+  } else {
+    box.innerHTML = `<div class="mat">🎉 Acabaram as provas!</div><div class="dias">Mandou bem!</div>`;
+  }
+
+  // grade de matérias
+  const grid = document.getElementById("subjGrid");
+  grid.innerHTML="";
+  for(const id in DADOS){
+    const s = DADOS[id]; const pr = progressoSubj(id);
+    const el = document.createElement("button");
+    el.className="subj"; el.style.background=s.cor;
+    el.onclick=()=>openSubject(id);
+    el.innerHTML = `<div class="ico">${s.ico}</div>
+      <div class="nm">${s.nome}</div>
+      <div class="dt">${s.provas}</div>
+      <div class="bar"><div style="width:${pr.pct}%"></div></div>
+      <div class="pct">🟢 ${pr.feitos}/${pr.t} dominados · ${pr.pct}%</div>`;
+    grid.appendChild(el);
+  }
+}
+
+/* =========================================================
+   NAVEGAÇÃO
+   ========================================================= */
+let atual=null;
+function show(scr){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(scr).classList.add("active");
+  window.scrollTo(0,0);
+}
+function goHome(){ renderHome(); show("home"); }
+function openSubject(id){
+  atual=id; const s=DADOS[id];
+  document.getElementById("subjHead").style.background=s.cor;
+  document.getElementById("subjHead").innerHTML =
+    `<div class="ico">${s.ico}</div><h2>${s.nome}</h2><div class="dt">${s.provas}</div>`;
+  setTab("aulas");
+  renderAulas(); renderCheck(); renderCards(); renderQuizMenu();
+  show("subject");
+}
+function setTab(t){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===t));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
+  document.getElementById("panel-"+t).classList.add("on");
+}
+
+/* =========================================================
+   AULAS (explicações de cada assunto)
+   ========================================================= */
+function renderAulas(){
+  const s=DADOS[atual];
+  const wrap=document.getElementById("panel-aulas"); wrap.innerHTML="";
+  const intro=document.createElement("div");
+  intro.className="legenda";
+  intro.innerHTML="📚 Aqui ficam as <b>explicações</b> de cada assunto. Toque para abrir, leia com calma e depois teste no <b>Treino</b> e na <b>Batalha</b>!";
+  wrap.appendChild(intro);
+  s.licoes.forEach((l,i)=>{
+    const item=document.createElement("div");
+    item.className="licao";
+    item.innerHTML=`<div class="licao-tit" onclick="toggleLicao(${i})"><span>${l[0]}</span><span class="seta" id="seta-${i}">▾</span></div><div class="licao-corpo" id="corpo-${i}">${l[1]}</div>`;
+    wrap.appendChild(item);
+  });
+}
+function toggleLicao(i){
+  const c=document.getElementById("corpo-"+i), st=document.getElementById("seta-"+i);
+  const aberto=c.classList.toggle("aberto");
+  st.textContent=aberto?"▴":"▾";
+}
+
+/* =========================================================
+   CHECKLIST
+   ========================================================= */
+const NIVEIS=[{ic:"",lab:"ainda não"},{ic:"🤔",lab:"mais ou menos"},{ic:"✓",lab:"manjo!"}];
+function nivel(st,i){ const v=st.topicos[i]; if(v===true) return 2; return v||0; }
+function renderCheck(){
+  const s=DADOS[atual]; const st=getSubj(atual);
+  const wrap=document.getElementById("panel-check"); wrap.innerHTML="";
+  const legenda=document.createElement("div");
+  legenda.className="legenda";
+  legenda.innerHTML="👆 Toque em cada tópico para marcar o quanto você sabe:<br>⚪ <b>ainda não</b> → 🟡 <b>mais ou menos</b> → 🟢 <b>manjo!</b>";
+  wrap.appendChild(legenda);
+  s.topicos.forEach((t,i)=>{
+    const lv=nivel(st,i);
+    const el=document.createElement("div");
+    el.className="topic lvl"+lv;
+    el.onclick=()=>{ st.topicos[i]=(nivel(st,i)+1)%3; salvar(); renderCheck(); };
+    el.innerHTML=`<div class="check">${NIVEIS[lv].ic}</div><div class="txt">${t}</div><div class="status">${NIVEIS[lv].lab}</div>`;
+    wrap.appendChild(el);
+  });
+}
+
+/* =========================================================
+   FLASHCARDS
+   ========================================================= */
+let fcIndex=0;
+function renderCards(){
+  fcIndex=0; drawCard();
+}
+function drawCard(){
+  const s=DADOS[atual]; const c=s.flashcards[fcIndex];
+  const wrap=document.getElementById("panel-cards");
+  wrap.innerHTML=`
+    <div class="fc-area">
+      <div class="flashcard" id="fcEl" onclick="flipCard()">
+        <div class="fc-inner">
+          <div class="fc-face fc-front">
+            <div class="fc-tag">Pergunta</div>
+            <div class="fc-text">${c[0]}</div>
+            <div class="fc-hint">👆 toque para ver a resposta</div>
+          </div>
+          <div class="fc-face fc-back">
+            <div class="fc-tag">Resposta</div>
+            <div class="fc-text">${c[1]}</div>
+            <div class="fc-hint">👆 toque para virar</div>
+          </div>
+        </div>
+      </div>
+      <div class="fc-nav">
+        <button onclick="prevCard(event)">←</button>
+        <div class="fc-count">${fcIndex+1} / ${s.flashcards.length}</div>
+        <button onclick="nextCard(event)">→</button>
+      </div>
+    </div>`;
+}
+function flipCard(){ document.getElementById("fcEl").classList.toggle("flip"); }
+function nextCard(e){ e.stopPropagation(); const n=DADOS[atual].flashcards.length; fcIndex=(fcIndex+1)%n; drawCard(); }
+function prevCard(e){ e.stopPropagation(); const n=DADOS[atual].flashcards.length; fcIndex=(fcIndex-1+n)%n; drawCard(); }
+
+/* =========================================================
+   QUIZ
+   ========================================================= */
+let qIndex=0, qScore=0, qAnswered=false, qOrder=[], qCombo=0, qModo="normal";
+const QTD_RODADA=20; // quantas perguntas por rodada (sorteadas)
+function embaralhar(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function renderQuizMenu(){
+  const erros=Object.keys(getSubj(atual).erros).length;
+  document.getElementById("panel-quiz").innerHTML=`
+    <div class="q-menu">
+      <button class="q-start" onclick="renderQuiz('normal')">⚔️ Nova Batalha · 20 perguntas</button>
+      <button class="q-start rev" onclick="renderQuiz('erros')" ${erros===0?"disabled":""}>🔁 Revisar o que errei · ${erros}</button>
+      <div class="q-menu-hint">${erros===0?"Você ainda não tem erros guardados. Faça uma batalha primeiro! 💪":"Treine de novo só as perguntas que você errou — é o jeito mais rápido de aprender!"}</div>
+    </div>`;
+}
+function renderQuiz(modo){
+  modo=modo||"normal"; qModo=modo;
+  if(modo==="erros"){
+    const ids=Object.keys(getSubj(atual).erros).map(Number);
+    if(ids.length===0){ renderQuizMenu(); return; }
+    qOrder=embaralhar(ids).slice(0, Math.min(QTD_RODADA, ids.length));
+  } else {
+    const n=DADOS[atual].quiz.length;
+    qOrder=embaralhar([...Array(n).keys()]).slice(0, Math.min(QTD_RODADA,n));
+  }
+  qIndex=0; qScore=0; qCombo=0; drawQuestion();
+}
+function drawQuestion(){
+  const s=DADOS[atual]; const wrap=document.getElementById("panel-quiz");
+  if(qIndex>=qOrder.length){ drawResult(); return; }
+  qAnswered=false;
+  const q=s.quiz[qOrder[qIndex]];
+  let opts="";
+  embaralhar([...Array(q[1].length).keys()]).forEach(oi=>{ opts+=`<button class="opt" data-oi="${oi}" onclick="answer(${oi})">${q[1][oi]}</button>`; });
+  wrap.innerHTML=`
+    <div class="q-wrap">
+      <div class="q-progress">${qModo==="erros"?"🔁 Revisão · ":""}Pergunta ${qIndex+1} de ${qOrder.length} · ⭐ ${qScore} acertos</div>
+      <div class="q-card">
+        <div class="q-text">${q[0]}</div>
+        <div id="opts">${opts}</div>
+        <div class="feedback" id="fb"></div>
+        <button class="q-next" id="qnext" onclick="nextQuestion()">Próxima →</button>
+      </div>
+    </div>`;
+}
+function answer(i){
+  if(qAnswered) return; qAnswered=true;
+  const s=DADOS[atual]; const st=getSubj(atual); const idQ=qOrder[qIndex];
+  const q=s.quiz[idQ]; const correta=q[2];
+  const botoes=document.querySelectorAll("#opts .opt");
+  botoes.forEach(b=>{
+    b.disabled=true;
+    const oi=parseInt(b.dataset.oi,10);
+    if(oi===correta) b.classList.add("correct");
+    if(oi===i && i!==correta) b.classList.add("wrong");
+  });
+  const fb=document.getElementById("fb");
+  if(i===correta){ qScore++; qCombo++; delete st.erros[idQ]; fb.className="feedback ok show"; fb.innerHTML="✅ Acertou! "+q[3]; festa(); if(qCombo>=2) comboPop(qCombo); }
+  else { qCombo=0; st.erros[idQ]=true; fb.className="feedback no show"; fb.innerHTML="❌ Quase! "+q[3]; }
+  salvar();
+  document.getElementById("qnext").classList.add("show");
+}
+function nextQuestion(){ qIndex++; drawQuestion(); }
+function drawResult(){
+  const s=DADOS[atual]; const st=getSubj(atual); const total=qOrder.length;
+  if(qScore > (st.quizMelhor||0)){ st.quizMelhor=qScore; salvar(); }
+  const pct=Math.round(qScore/total*100);
+  let emoji, msg;
+  if(pct===100){ emoji="🏆"; msg="PERFEITO, "+ALUNO+"! Poder máximo desbloqueado! 🔥"; festaGrande(); }
+  else if(pct>=70){ emoji="⚡"; msg="Mandou bem! Seu poder está crescendo — continue treinando!"; festa(); }
+  else if(pct>=40){ emoji="💪"; msg="Bom combate! Revise o treino e volte mais forte."; }
+  else { emoji="🌱"; msg="Todo herói começa do zero. Treine mais e volte pra revanche!"; }
+  document.getElementById("panel-quiz").innerHTML=`
+    <div class="result">
+      <div class="emoji">${emoji}</div>
+      <div class="score">${qScore} / ${total}</div>
+      <div class="msg">${msg}<br>Recorde nesta matéria: ⭐ ${st.quizMelhor}</div>
+      <div class="result-btns">
+        <button onclick="renderQuiz('${qModo}')">🔄 Jogar de novo</button>
+        <button class="secund" onclick="renderQuizMenu()">↩️ Menu da Batalha</button>
+      </div>
+    </div>`;
+}
+
+/* =========================================================
+   CONFETE 🎊
+   ========================================================= */
+function comboPop(n){
+  const frases={3:"BOA!",4:"MANDOU BEM!",5:"INCRÍVEL!",6:"EM CHAMAS! 🔥",7:"IMPARÁVEL!",8:"MONSTRO!",10:"LENDÁRIO! 👑"};
+  const extra=frases[n]||"";
+  const p=document.createElement("div"); p.className="combo-pop";
+  p.innerHTML=`<span class="cx">COMBO x${n}</span>${extra?`<span class="ce">${extra}</span>`:""}`;
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(),1100);
+}
+function petala(){
+  const sparks=["✦","✧","⚡","✨"];
+  const p=document.createElement("div"); p.className="sakura";
+  p.textContent=sparks[Math.floor(Math.random()*sparks.length)];
+  p.style.left=(Math.random()*100)+"vw";
+  p.style.fontSize=(10+Math.random()*14)+"px";
+  p.style.color=Math.random()<0.5?"#fbbf24":"#ef4444";
+  p.style.animationDuration=(6+Math.random()*6)+"s";
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(),12000);
+}
+function festa(n=18){
+  const emojis=["⚡","🌸","💥","✨","⭐","🔥","💫","🌟"];
+  for(let i=0;i<n;i++){
+    const c=document.createElement("div");
+    c.className="confetti"; c.textContent=emojis[i%emojis.length];
+    c.style.left=(Math.random()*100)+"vw";
+    c.style.animationDuration=(1.5+Math.random()*1.5)+"s";
+    c.style.fontSize=(16+Math.random()*16)+"px";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),3200);
+  }
+}
+function festaGrande(){ festa(50); }
+
+/* =========================================================
+   RESET
+   ========================================================= */
+function resetTudo(){
+  if(confirm("Tem certeza que quer apagar TODO o progresso? Isso não pode ser desfeito.")){
+    estado={}; salvar(); renderHome();
+  }
+}
+
+/* =========================================================
+   FOTO DE PERFIL (toque no avatar para escolher uma imagem)
+   ========================================================= */
+const PERFIL_KEY="missaoPerfilFoto";
+function aplicarFoto(src){
+  const a=document.getElementById("avatar");
+  a.style.backgroundImage="url('"+src+"')";
+  a.textContent=""; a.classList.add("comfoto");
+}
+function carregarPerfil(){
+  const salvo=localStorage.getItem(PERFIL_KEY);
+  if(salvo){ aplicarFoto(salvo); return; }
+  const img=new Image();
+  img.onload=()=>aplicarFoto("perfil.jpg");   // se existir um perfil.jpg na pasta, usa sozinho
+  img.src="perfil.jpg";
+}
+document.getElementById("avatar").addEventListener("click", ()=>document.getElementById("fotoInput").click());
+document.getElementById("fotoInput").addEventListener("change", (e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const size=256, c=document.createElement("canvas"); c.width=size; c.height=size;
+      const ctx=c.getContext("2d");
+      const m=Math.min(img.width,img.height), sx=(img.width-m)/2, sy=(img.height-m)/2;
+      ctx.drawImage(img, sx, sy, m, m, 0, 0, size, size);  // recorta no centro (quadrado)
+      let data; try{ data=c.toDataURL("image/jpeg",0.85); }catch(err){ data=ev.target.result; }
+      try{ localStorage.setItem(PERFIL_KEY,data); }catch(err){}
+      aplicarFoto(data);
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+carregarPerfil();
+
+/* INICIAR */
+document.getElementById("nomeAluno").textContent = ALUNO;
+setInterval(petala, 1300); petala(); petala();
+renderHome();
+
+/* PWA: registra o service worker (offline + instalável) */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
