@@ -228,6 +228,10 @@
   body.tema-lia .rankpill{ background:linear-gradient(135deg,#db2777,#7c3aed); box-shadow:0 0 16px rgba(219,39,119,.6); color:#fde68a; }
   body.tema-lia .subj:hover{ box-shadow:0 0 26px rgba(244,114,182,.5), 0 12px 24px rgba(0,0,0,.45); }
   body.tema-lia .tab.on{ background:#db2777; border-color:#db2777; }
+  /* botão "ouvir em voz alta" (acessibilidade) */
+  .voz{display:inline-block; background:#7c3aed; border:none; color:#fff; border-radius:999px; padding:8px 16px; font-size:14px; font-weight:700; cursor:pointer; margin:0 0 12px;}
+  .voz:active{transform:scale(.96);}
+  body.tema-lia .voz{background:#db2777;}
 </style>
 </head>
 <body>
@@ -1010,7 +1014,7 @@ const HOJE = new Date("2026-06-07T12:00:00");
    é só copiar um bloco abaixo com novo id, nome, dados, etc.
    ========================================================= */
 const PERFIS = [
-  { id:"mario", nome:"Mario", serie:"6º ano", avatar:"🦸", classe:"tema-mario",
+  { id:"mario", nome:"Mario", serie:"6º ano", avatar:"🦸", classe:"tema-mario", qtdRodada:20,
     sub:"2º Bimestre · 6º Ano · Supere seus limites!",
     particulas:["✦","✧","⚡","✨"], cores:["#fbbf24","#ef4444"], fotoArquivo:"perfil.jpg",
     ranks:[
@@ -1020,7 +1024,7 @@ const PERFIS = [
       {min:700,ico:"💥",nome:"Lenda Suprema"},{min:850,ico:"👑",nome:"Titã Imortal"}
     ],
     dados: DADOS_MARIO },
-  { id:"lia", nome:"Lia", serie:"3º ano", avatar:"🦄", classe:"tema-lia",
+  { id:"lia", nome:"Lia", serie:"3º ano", avatar:"🦄", classe:"tema-lia", qtdRodada:5, voz:true,
     sub:"3º Ano · Brilhe nos estudos! ✨",
     particulas:["🌸","✨","💖","⭐","🦋"], cores:["#f472b6","#a78bfa"],
     ranks:[
@@ -1036,6 +1040,7 @@ let DADOS=null, ALUNO="", RANKS=[], PERFIL_ID=null;
 let PARTICULAS=["✨","⭐","🌟"], PART_CORES=["#fbbf24","#a78bfa"];
 let PERFIL_FOTO_KEY="missaoPerfilFoto";
 let ultimoRank=null;
+let RODADA=20, VOZ=false, qAtualTexto="";  // RODADA e VOZ definidos por perfil
 
 function rank(xp){ let r=RANKS[0]; for(const x of RANKS) if(xp>=x.min) r=x; return r; }
 function bannerRankUp(r){
@@ -1064,6 +1069,7 @@ function selecionarPerfil(id){
   const p=PERFIS.find(x=>x.id===id); if(!p) return;
   PERFIL_ID=id; DADOS=p.dados; ALUNO=p.nome; RANKS=p.ranks;
   PARTICULAS=p.particulas; PART_CORES=p.cores;
+  RODADA=p.qtdRodada||20; VOZ=!!p.voz;
   PERFIL_FOTO_KEY="missaoPerfilFoto_"+id;
   document.body.className=p.classe;
   estado = JSON.parse(localStorage.getItem("missaoProva_"+id) || "{}");
@@ -1209,7 +1215,7 @@ function renderAulas(){
   s.licoes.forEach((l,i)=>{
     const item=document.createElement("div");
     item.className="licao";
-    item.innerHTML=`<div class="licao-tit" onclick="toggleLicao(${i})"><span>${l[0]}</span><span class="seta" id="seta-${i}">▾</span></div><div class="licao-corpo" id="corpo-${i}">${l[1]}</div>`;
+    item.innerHTML=`<div class="licao-tit" onclick="toggleLicao(${i})"><span>${l[0]}</span><span class="seta" id="seta-${i}">▾</span></div><div class="licao-corpo" id="corpo-${i}">${VOZ?`<button class="voz" onclick="falarAula(${i})">🔊 Ouvir a explicação</button><br>`:""}${l[1]}</div>`;
     wrap.appendChild(item);
   });
 }
@@ -1282,13 +1288,13 @@ function prevCard(e){ e.stopPropagation(); const n=DADOS[atual].flashcards.lengt
    QUIZ
    ========================================================= */
 let qIndex=0, qScore=0, qAnswered=false, qOrder=[], qCombo=0, qModo="normal", vistas={};
-const QTD_RODADA=20; // quantas perguntas por rodada (sorteadas)
+// perguntas por rodada: variável RODADA, definida por perfil (Mario 20, Lia 5)
 function embaralhar(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function renderQuizMenu(){
   const erros=Object.keys(getSubj(atual).erros).length;
   document.getElementById("panel-quiz").innerHTML=`
     <div class="q-menu">
-      <button class="q-start" onclick="renderQuiz('normal')">⚔️ Nova Batalha · 20 perguntas</button>
+      <button class="q-start" onclick="renderQuiz('normal')">⚔️ Nova Batalha · ${RODADA} perguntas</button>
       <button class="q-start rev" onclick="renderQuiz('erros')" ${erros===0?"disabled":""}>🔁 Revisar o que errei · ${erros}</button>
       <div class="q-menu-hint">${erros===0?"Você ainda não tem erros guardados. Faça uma batalha primeiro! 💪":"Treine de novo só as perguntas que você errou — é o jeito mais rápido de aprender!"}</div>
     </div>`;
@@ -1298,15 +1304,15 @@ function renderQuiz(modo){
   if(modo==="erros"){
     const ids=Object.keys(getSubj(atual).erros).map(Number);
     if(ids.length===0){ renderQuizMenu(); return; }
-    qOrder=embaralhar(ids).slice(0, Math.min(QTD_RODADA, ids.length));
+    qOrder=embaralhar(ids).slice(0, Math.min(RODADA, ids.length));
   } else {
     const n=DADOS[atual].quiz.length;
     const chave=PERFIL_ID+"_"+atual;
     if(!vistas[chave]) vistas[chave]=[];
     // pega só as perguntas que ainda não saíram na rotação atual
     let disponiveis=[...Array(n).keys()].filter(i=>!vistas[chave].includes(i));
-    if(disponiveis.length < Math.min(QTD_RODADA,n)){ vistas[chave]=[]; disponiveis=[...Array(n).keys()]; } // ciclo completo → recomeça
-    qOrder=embaralhar(disponiveis).slice(0, Math.min(QTD_RODADA,n));
+    if(disponiveis.length < Math.min(RODADA,n)){ vistas[chave]=[]; disponiveis=[...Array(n).keys()]; } // ciclo completo → recomeça
+    qOrder=embaralhar(disponiveis).slice(0, Math.min(RODADA,n));
     vistas[chave]=vistas[chave].concat(qOrder); // marca como já vistas
   }
   qIndex=0; qScore=0; qCombo=0; drawQuestion();
@@ -1316,6 +1322,7 @@ function drawQuestion(){
   if(qIndex>=qOrder.length){ drawResult(); return; }
   qAnswered=false;
   const q=s.quiz[qOrder[qIndex]];
+  qAtualTexto = semHtml(q[0])+". "+q[1].join(". ");
   let opts="";
   embaralhar([...Array(q[1].length).keys()]).forEach(oi=>{ opts+=`<button class="opt" data-oi="${oi}" onclick="answer(${oi})">${q[1][oi]}</button>`; });
   wrap.innerHTML=`
@@ -1323,6 +1330,7 @@ function drawQuestion(){
       <div class="q-progress">${qModo==="erros"?"🔁 Revisão · ":""}Pergunta ${qIndex+1} de ${qOrder.length} · ⭐ ${qScore} acertos</div>
       <div class="q-card">
         <div class="q-text">${q[0]}</div>
+        ${VOZ?`<button class="voz" onclick="falar(qAtualTexto)">🔊 Ouvir a pergunta</button>`:""}
         <div id="opts">${opts}</div>
         <div class="feedback" id="fb"></div>
         <button class="q-next" id="qnext" onclick="nextQuestion()">Próxima →</button>
@@ -1402,6 +1410,19 @@ function festa(n=18){
   }
 }
 function festaGrande(){ festa(50); }
+
+/* =========================================================
+   ACESSIBILIDADE: ouvir em voz alta (apoio p/ TDAH/leitura)
+   ========================================================= */
+function semHtml(s){ return s.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim(); }
+function falar(txt){
+  if(!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt);
+  u.lang="pt-BR"; u.rate=0.95;
+  speechSynthesis.speak(u);
+}
+function falarAula(i){ const l=DADOS[atual].licoes[i]; falar(semHtml(l[0]+". "+l[1])); }
 
 /* =========================================================
    RESET
